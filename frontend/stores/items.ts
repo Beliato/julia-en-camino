@@ -153,6 +153,21 @@ export const useItemsStore = defineStore('items', {
       if (item) item.fotos.push(foto as never)
       return foto
     },
+    /** Importa la imagen del producto desde el link de la tienda.
+     *
+     * La descarga la hace el backend: el navegador no puede leer el
+     * HTML de otro dominio por CORS.
+     */
+    async fotoDesdeUrl(itemId: number, url: string) {
+      const api = useApi()
+      const foto = await api(`/items/${itemId}/fotos/desde-url`, {
+        method: 'POST',
+        body: { url },
+      })
+      const item = this.items.find((i) => i.id === itemId)
+      if (item) item.fotos.push(foto as never)
+      return foto
+    },
     async eliminarFoto(itemId: number, fotoId: number) {
       const api = useApi()
       await api(`/items/${itemId}/fotos/${fotoId}`, { method: 'DELETE' })

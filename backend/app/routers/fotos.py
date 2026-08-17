@@ -1,12 +1,18 @@
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core import storage_r2
+from app.core import imagen_remota, storage_r2
 from app.core.database import get_db
 from app.core.deps import get_current_admin
 from app.models.admin import Admin
 from app.models.item import FotoItem, Item
-from app.schemas.foto import FotoConfirmar, PresignRequest, PresignResponse
+from app.schemas.foto import (
+    FotoConfirmar,
+    FotoDesdeUrl,
+    PresignRequest,
+    PresignResponse,
+)
 from app.schemas.item import FotoItemOut
 
 router = APIRouter(prefix="/items", tags=["fotos"])
@@ -77,6 +83,36 @@ def confirmar_foto(
     foto = FotoItem(
         item_id=item_id, url=storage_r2.url_publica(body.key), orden=body.orden
     )
+    db.add(foto)
+    db.commit()
+    db.refresh(foto)
+    return foto
+
+
+@router.post(
+    "/{item_id}/fotos/desde-url",
+    response_model=FotoItemOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def foto_desde_url(
+    item_id: int,
+    body: FotoDesdeUrl,
+    db: Session = Depends(get_db),
+    _: Admin = Depends(get_current_admin),
+):
+    """Importa la imagen del producto desde el link de la tienda."""
+    _check_r2()
+    _get_item_or_404(item_id, db)
+    try:
+        contenido, content_type = imagen_remota.obtener_imagen(str(body.url))
+    except imagen_remota.ImagenRemotaError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=422, detail="No se pudo abrir ese link") from e
+
+    key = storage_r2.generar_key(item_id, content_type)
+    storage_r2.subir_bytes(key, contenido, content_type)
+    foto = FotoItem(item_id=item_id, url=storage_r2.url_publica(key), orden=body.orden)
     db.add(foto)
     db.commit()
     db.refresh(foto)

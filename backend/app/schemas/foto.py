@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 
 
 class PresignRequest(BaseModel):
@@ -13,4 +13,11 @@ class PresignResponse(BaseModel):
 
 class FotoConfirmar(BaseModel):
     key: str = Field(min_length=1, max_length=500)
+    orden: int = Field(default=0, ge=0)
+
+
+class FotoDesdeUrl(BaseModel):
+    """Link de la tienda (o de la imagen) del que sacar la foto."""
+
+    url: HttpUrl
     orden: int = Field(default=0, ge=0)
