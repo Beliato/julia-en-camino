@@ -70,6 +70,21 @@ def presign_put(key: str, content_type: str) -> str:
     )
 
 
+def subir_bytes(key: str, contenido: bytes, content_type: str) -> None:
+    """Sube desde el backend, sin presign.
+
+    Lo usa la importación de imágenes desde el link de la tienda: ahí el
+    archivo ya está en memoria del servidor y no tiene sentido darle una
+    vuelta por el navegador.
+    """
+    _cliente().put_object(
+        Bucket=settings.R2_BUCKET,
+        Key=key,
+        Body=contenido,
+        ContentType=content_type,
+    )
+
+
 def objeto_existe(key: str) -> bool:
     try:
         _cliente().head_object(Bucket=settings.R2_BUCKET, Key=key)

@@ -24,9 +24,84 @@ const creandoCategoria = ref(false)
 const guardando = ref(false)
 const subiendoFoto = ref(false)
 
+/** Fotos elegidas antes de que el item exista, con su preview local. */
+const fotosPendientes = ref<{ file: File; url: string }[]>([])
+
+const trayendoDelLink = ref(false)
+/** Al crear no hay id contra el cual importar: se deja marcado y se
+ *  resuelve junto con las fotos pendientes. */
+const linkPendiente = ref(false)
+
 const esEdicion = computed(() => !!props.item)
 
 onMounted(() => categorias.fetchAll())
+
+onUnmounted(() => {
+  fotosPendientes.value.forEach((p) => URL.revokeObjectURL(p.url))
+})
+
+function quitarPendiente(indice: number) {
+  const [quitada] = fotosPendientes.value.splice(indice, 1)
+  if (quitada) URL.revokeObjectURL(quitada.url)
+}
+
+/** Sube lo que quedó esperando, ya con el id del item recién creado.
+ *
+ * No propaga el error: si el item se creó, cerrar el modal con un aviso
+ * es mejor que hacer parecer que falló todo y tentar a crearlo de nuevo.
+ */
+/** Trae la imagen del producto desde el link de la tienda.
+ *
+ * El aviso de error usa el detail del backend porque ahí está lo útil:
+ * distingue "esa página no declara imagen" de "la tienda respondió 503",
+ * y sin eso el usuario no sabe si reintentar o copiar la imagen a mano.
+ */
+async function traerDelLink(itemId: number) {
+  trayendoDelLink.value = true
+  try {
+    await items.fotoDesdeUrl(itemId, amazonLink.value.trim())
+    toast.add({ title: 'Imagen importada del link', color: 'green' })
+    return true
+  } catch (e: unknown) {
+    const detalle = (e as { data?: { detail?: string } }).data?.detail
+    toast.add({
+      title: 'No pude traer la imagen',
+      description: detalle ?? 'Probá copiando la dirección de la imagen.',
+      color: 'red',
+    })
+    return false
+  } finally {
+    trayendoDelLink.value = false
+  }
+}
+
+async function onTraerDelLink() {
+  if (!props.item) {
+    linkPendiente.value = true
+    return
+  }
+  await traerDelLink(props.item.id)
+}
+
+async function subirPendientes(itemId: number) {
+  if (linkPendiente.value) await traerDelLink(itemId)
+
+  const fallidas: string[] = []
+  for (const pendiente of fotosPendientes.value) {
+    try {
+      await items.subirFoto(itemId, pendiente.file)
+    } catch {
+      fallidas.push(pendiente.file.name)
+    }
+  }
+  if (fallidas.length > 0) {
+    toast.add({
+      title: 'El item se creó, pero faltaron fotos',
+      description: `No se pudieron subir ${fallidas.length} de ${fotosPendientes.value.length}. Podés agregarlas editando el item.`,
+      color: 'amber',
+    })
+  }
+}
 
 const opcionesCategoria = computed(() => [
   { value: SIN_CATEGORIA, label: 'Sin categoría' },
@@ -55,7 +130,8 @@ async function guardar() {
     if (props.item) {
       await items.editar(props.item.id, body)
     } else {
-      await items.crear(body)
+      const creado = await items.crear(body)
+      await subirPendientes(creado.id)
     }
     emit('saved')
     emit('close')
@@ -75,7 +151,13 @@ async function guardar() {
 }
 
 async function onFotoSeleccionada(file: File) {
-  if (!props.item) return
+  // Al crear todavía no hay id contra el cual firmar la subida (la key
+  // en R2 es items/{id}/… y el backend valida esa pertenencia). Se
+  // retiene el archivo y se sube apenas el item exista.
+  if (!props.item) {
+    fotosPendientes.value.push({ file, url: URL.createObjectURL(file) })
+    return
+  }
   subiendoFoto.value = true
   try {
     await items.subirFoto(props.item.id, file)
@@ -184,9 +266,27 @@ async function quitarFoto(fotoId: number) {
 
         <UFormGroup label="Link de Amazon (o tienda)">
           <UInput v-model="amazonLink" type="url" placeholder="https://amazon.com/…" />
+          <div v-if="amazonLink.trim()" class="mt-1 flex items-center gap-2">
+            <UButton
+              variant="link"
+              size="xs"
+              icon="i-heroicons-arrow-down-tray"
+              :loading="trayendoDelLink"
+              :disabled="linkPendiente"
+              @click="onTraerDelLink"
+            >
+              Usar la imagen del link
+            </UButton>
+            <span
+              v-if="linkPendiente"
+              class="text-xs text-gray-500 dark:text-gray-400"
+            >
+              Se trae cuando guardes.
+            </span>
+          </div>
         </UFormGroup>
 
-        <div v-if="esEdicion" class="space-y-2">
+        <div class="space-y-2">
           <p class="text-sm font-medium">Fotos de referencia</p>
           <div class="flex flex-wrap items-center gap-2">
             <div
@@ -204,16 +304,36 @@ async function quitarFoto(fotoId: number) {
                 <UIcon name="i-heroicons-trash" class="h-5 w-5" />
               </button>
             </div>
+
+            <div
+              v-for="(pendiente, i) in fotosPendientes"
+              :key="pendiente.url"
+              class="group relative h-16 w-16 overflow-hidden rounded-lg border border-dashed border-pink-300 dark:border-pink-800"
+            >
+              <img :src="pendiente.url" alt="" class="h-full w-full object-cover">
+              <button
+                type="button"
+                class="absolute inset-0 hidden items-center justify-center bg-black/50 text-white group-hover:flex"
+                :aria-label="`Quitar foto ${pendiente.file.name}`"
+                @click="quitarPendiente(i)"
+              >
+                <UIcon name="i-heroicons-x-mark" class="h-5 w-5" />
+              </button>
+            </div>
+
             <SelectorFoto
               :cargando="subiendoFoto"
               etiqueta="Agregar foto"
               @seleccion="onFotoSeleccionada"
             />
           </div>
+          <p
+            v-if="!esEdicion && fotosPendientes.length > 0"
+            class="text-xs text-gray-500 dark:text-gray-400"
+          >
+            Se suben cuando guardes el item.
+          </p>
         </div>
-        <p v-else class="text-xs text-gray-500 dark:text-gray-400">
-          Las fotos se agregan después de crear el item (al editarlo).
-        </p>
 
         <div class="flex justify-end gap-2">
           <UButton variant="ghost" color="gray" @click="emit('close')">
