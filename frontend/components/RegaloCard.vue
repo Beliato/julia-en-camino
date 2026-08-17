@@ -16,7 +16,6 @@ const toast = useToast()
 const subiendo = ref(false)
 const trabajando = ref(false)
 const confirmarBorrado = ref(false)
-const fileInput = ref<HTMLInputElement>()
 
 const fechaLegible = computed(() =>
   new Date(`${props.regalo.fecha}T00:00:00`).toLocaleDateString('es', {
@@ -38,9 +37,7 @@ async function alternarAgradecido() {
   }
 }
 
-async function onFoto(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
+async function onFoto(file: File) {
   subiendo.value = true
   try {
     await regalos.subirFoto(props.regalo.id, file)
@@ -54,7 +51,6 @@ async function onFoto(e: Event) {
     })
   } finally {
     subiendo.value = false
-    if (fileInput.value) fileInput.value.value = ''
   }
 }
 
@@ -153,22 +149,12 @@ async function borrar() {
           <UIcon name="i-heroicons-trash" class="h-4 w-4" />
         </button>
       </a>
-      <UButton
-        variant="outline"
+      <SelectorFoto
+        :cargando="subiendo"
+        etiqueta="Foto de Julia"
         size="xs"
-        icon="i-heroicons-camera"
-        :loading="subiendo"
-        @click="fileInput?.click()"
-      >
-        Foto de Julia
-      </UButton>
-      <input
-        ref="fileInput"
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        class="hidden"
-        @change="onFoto"
-      >
+        @seleccion="onFoto"
+      />
       <UButton
         v-if="props.regalo.persona"
         size="xs"

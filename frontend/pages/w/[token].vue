@@ -302,6 +302,7 @@ async function deshacer(itemId: number) {
                 alt=""
                 class="mb-3 h-40 w-full rounded-lg object-cover"
               >
+              <FotoPlaceholder v-else alto="h-40" class="mb-3" />
               <div class="flex items-start justify-between gap-2">
                 <p class="font-medium">{{ item.nombre }}</p>
                 <UBadge

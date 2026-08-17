@@ -23,7 +23,6 @@ const nuevaCategoria = ref('')
 const creandoCategoria = ref(false)
 const guardando = ref(false)
 const subiendoFoto = ref(false)
-const fileInput = ref<HTMLInputElement>()
 
 const esEdicion = computed(() => !!props.item)
 
@@ -75,9 +74,8 @@ async function guardar() {
   }
 }
 
-async function onFotoSeleccionada(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file || !props.item) return
+async function onFotoSeleccionada(file: File) {
+  if (!props.item) return
   subiendoFoto.value = true
   try {
     await items.subirFoto(props.item.id, file)
@@ -91,7 +89,6 @@ async function onFotoSeleccionada(e: Event) {
     })
   } finally {
     subiendoFoto.value = false
-    if (fileInput.value) fileInput.value.value = ''
   }
 }
 
@@ -207,22 +204,11 @@ async function quitarFoto(fotoId: number) {
                 <UIcon name="i-heroicons-trash" class="h-5 w-5" />
               </button>
             </div>
-            <UButton
-              variant="outline"
-              size="sm"
-              icon="i-heroicons-photo"
-              :loading="subiendoFoto"
-              @click="fileInput?.click()"
-            >
-              Agregar foto
-            </UButton>
-            <input
-              ref="fileInput"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              class="hidden"
-              @change="onFotoSeleccionada"
-            >
+            <SelectorFoto
+              :cargando="subiendoFoto"
+              etiqueta="Agregar foto"
+              @seleccion="onFotoSeleccionada"
+            />
           </div>
         </div>
         <p v-else class="text-xs text-gray-500 dark:text-gray-400">

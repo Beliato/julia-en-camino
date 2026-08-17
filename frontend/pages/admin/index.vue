@@ -309,6 +309,7 @@ function salir() {
           alt=""
           class="mt-2 h-32 w-full rounded-lg object-cover"
         >
+        <FotoPlaceholder v-else alto="h-32" class="mt-2" />
 
         <UButton
           v-if="item.reservas_activas > 0"
