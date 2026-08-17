@@ -26,9 +26,15 @@ const LOGO = '/logo-julia.png'
 const LOGO_DARK = '/logo-julia-dark.png'
 const logoOk = ref(true)
 
-// Items reservados desde este navegador ya no vienen en la lista pública,
-// así que se muestran aparte para poder deshacerlos.
-const misReservas = computed(() => Object.keys(reservas.value).map(Number))
+// Los items que aparté ya no vienen en la lista pública, así que se
+// muestran aparte —con su nombre— para poder deshacerlos.
+const misReservas = computed(() =>
+  Object.entries(reservas.value).map(([id, r]) => ({
+    itemId: Number(id),
+    // Las reservas hechas antes de guardar el nombre no lo tienen.
+    nombre: r.nombre || 'Un regalo apartado',
+  })),
+)
 
 /** Agrupa por categoría preservando el orden por prioridad del backend. */
 const grupos = computed(() => {
@@ -86,7 +92,7 @@ async function reservar() {
         },
       },
     )
-    guardar(item.id, data.token_deshacer)
+    guardar(item.id, data.token_deshacer, item.nombre)
     // Con varias unidades el item sigue disponible para otros.
     await fetchWishlist()
     itemReservando.value = null
@@ -115,7 +121,7 @@ async function reservar() {
 }
 
 async function deshacer(itemId: number) {
-  const tokenDeshacer = reservas.value[itemId]
+  const tokenDeshacer = reservas.value[itemId]?.token
   if (!tokenDeshacer) return
   try {
     await $fetch(`/w/reservas/${tokenDeshacer}/deshacer`, {
@@ -237,17 +243,18 @@ async function deshacer(itemId: number) {
           </h2>
           <div class="flex flex-wrap gap-2">
             <UCard
-              v-for="itemId in misReservas"
-              :key="itemId"
+              v-for="mia in misReservas"
+              :key="mia.itemId"
               class="flex-1 sm:max-w-xs"
             >
               <div class="flex items-center justify-between gap-2">
-                <span class="text-sm">🎁 Regalo reservado</span>
+                <span class="min-w-0 truncate text-sm">🎁 {{ mia.nombre }}</span>
                 <UButton
                   size="xs"
                   variant="ghost"
                   color="gray"
-                  @click="deshacer(itemId)"
+                  class="shrink-0"
+                  @click="deshacer(mia.itemId)"
                 >
                   Ya no puedo
                 </UButton>
