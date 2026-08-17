@@ -26,6 +26,17 @@ const LOGO = '/logo-julia.png'
 const LOGO_DARK = '/logo-julia-dark.png'
 const logoOk = ref(true)
 
+// Botón de volver arriba: aparece recién cuando el hero salió de vista.
+const heroRef = ref<HTMLElement>()
+const { y } = useWindowScroll()
+const mostrarSubir = computed(
+  () => y.value > (heroRef.value?.offsetHeight ?? 400) * 0.8,
+)
+
+function volverArriba() {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 // Los items que aparté ya no vienen en la lista pública, así que se
 // muestran aparte —con su nombre— para poder deshacerlos.
 const misReservas = computed(() =>
@@ -144,7 +155,7 @@ async function deshacer(itemId: number) {
 
 <template>
   <div class="min-h-screen bg-neutral-50 dark:bg-neutral-950">
-    <header class="px-4 pb-8 pt-10 text-center sm:pt-16">
+    <header ref="heroRef" class="px-4 pb-8 pt-10 text-center sm:pt-16">
       <!-- El logo con la guirnalda es la pieza principal. <picture> elige
            la variante clara u oscura sin JavaScript, así no parpadea al
            cargar. Si el archivo todavía no está, cae al ícono simple. -->
@@ -337,6 +348,22 @@ async function deshacer(itemId: number) {
       </template>
     </main>
 
+    <Transition name="subir">
+      <button
+        v-if="mostrarSubir"
+        type="button"
+        class="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50/90 py-2 pl-2 pr-4 shadow-lg backdrop-blur transition-transform hover:-translate-y-0.5 dark:border-neutral-800 dark:bg-neutral-900/90"
+        aria-label="Volver al inicio de la página"
+        @click="volverArriba"
+      >
+        <img src="/icon.svg" alt="" class="h-9 w-9" aria-hidden="true">
+        <UIcon
+          name="i-heroicons-arrow-up"
+          class="flecha h-4 w-4 text-pink-700 dark:text-pink-300"
+        />
+      </button>
+    </Transition>
+
     <UModal
       v-if="itemReservando"
       :model-value="true"
@@ -389,3 +416,34 @@ async function deshacer(itemId: number) {
     </UModal>
   </div>
 </template>
+
+<style scoped>
+/* Entrada y salida del botón */
+.subir-enter-active,
+.subir-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.subir-enter-from,
+.subir-leave-to {
+  opacity: 0;
+  transform: translate(-50%, 0.75rem);
+}
+
+/* La flecha late apenas, para invitar al click sin distraer */
+@keyframes flotar {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+.flecha {
+  animation: flotar 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .subir-enter-active,
+  .subir-leave-active,
+  .flecha {
+    transition: none;
+    animation: none;
+  }
+}
+</style>
