@@ -47,8 +47,14 @@ _META_IMAGEN_INVERSO = re.compile(
     r"""[^>]+(?:property|name)=["'](?:og:image(?::secure_url)?|twitter:image)["']""",
     re.I,
 )
+# Amazon sirve la misma imagen en decenas de tamaños, codificando el
+# recorte en el nombre: <id>._AC_SX300_.jpg. Esas versiones son diez
+# veces más frecuentes en el HTML que la desnuda, así que se aceptan las
+# dos y después se arma la URL sin sufijo, que devuelve el original.
+# Solo /images/I/ (fotos); /images/G/ son los sprites de la interfaz.
 _IMAGEN_AMAZON = re.compile(
-    r"https://m\.media-amazon\.com/images/I/[A-Za-z0-9_+-]{8,}\.(?:jpg|png)",
+    r"https://m\.media-amazon\.com/images/I/([A-Za-z0-9_+-]{8,})"
+    r"(?:\._[A-Za-z0-9_,]+_)?\.(jpg|png)",
     re.I,
 )
 
@@ -126,7 +132,8 @@ def buscar_imagen_en_html(html: str, base: str) -> str | None:
             return urljoin(base, unescape(encontrado.group(1)))
     encontrado = _IMAGEN_AMAZON.search(html)
     if encontrado:
-        return encontrado.group(0)
+        identificador, extension = encontrado.group(1), encontrado.group(2)
+        return f"https://m.media-amazon.com/images/I/{identificador}.{extension}"
     return None
 
 

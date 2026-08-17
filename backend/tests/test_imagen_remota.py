@@ -90,6 +90,17 @@ class TestBusquedaEnHtml:
             == "https://m.media-amazon.com/images/I/61e9Si044bL.jpg"
         )
 
+    def test_amazon_saca_el_sufijo_de_tamano_para_traer_el_original(self):
+        # En el HTML hay diez veces mas URLs con recorte (._AC_SX300_)
+        # que desnudas, y las primeras son versiones chicas.
+        html = (
+            '<img src="https://m.media-amazon.com/images/I/61e9Si044bL._AC_SX300_.jpg">'
+        )
+        assert (
+            imagen_remota.buscar_imagen_en_html(html, "https://www.amazon.com/dp/X")
+            == "https://m.media-amazon.com/images/I/61e9Si044bL.jpg"
+        )
+
     def test_devuelve_none_cuando_no_hay_nada(self):
         assert (
             imagen_remota.buscar_imagen_en_html(
