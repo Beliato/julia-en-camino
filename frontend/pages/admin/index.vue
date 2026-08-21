@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import type { Etapa, Item, ItemBusqueda } from '~/types/api'
-import {
-  ETAPAS,
-  ETAPA_LABEL,
-  PRIORIDAD_LABEL,
-  RANGO_PRECIO_LABEL,
-} from '~/types/api'
+import { ETAPAS, ETAPA_LABEL, RANGO_PRECIO_LABEL } from '~/types/api'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -402,9 +397,6 @@ function salir() {
           </UBadge>
           <UBadge v-if="item.cantidad > 1" color="blue" variant="subtle">
             {{ item.cantidad_recibida }}/{{ item.cantidad }} recibidos
-          </UBadge>
-          <UBadge v-if="item.prioridad === 'URGENTE'" color="red" variant="subtle">
-            {{ PRIORIDAD_LABEL.URGENTE }}
           </UBadge>
           <UBadge v-if="item.rango_precio" color="gray" variant="subtle">
             {{ RANGO_PRECIO_LABEL[item.rango_precio] }}
