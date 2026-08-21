@@ -380,8 +380,15 @@ function salir() {
       </div>
     </UCard>
 
-    <div v-else class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <UCard v-for="item in itemsFiltrados" :key="item.id">
+    <!-- Dos columnas ya en celular. A una sola, la tarjeta medía 358px de
+         ancho y la foto quedaba fijada en 128px de alto: se veía apenas
+         el 39% de una imagen cuadrada, o sea una tira muy apaisada. -->
+    <div v-else class="grid grid-cols-2 gap-3 lg:grid-cols-3">
+      <UCard
+        v-for="item in itemsFiltrados"
+        :key="item.id"
+        :ui="{ body: { padding: 'p-3 sm:p-6' } }"
+      >
         <div class="flex items-start justify-between gap-2">
           <!-- El título abre el editor: es la acción más frecuente y
                antes estaba a dos clicks, dentro del menú. Se usa un
@@ -394,8 +401,10 @@ function salir() {
             @click="editarItem(item)"
           >
             <span class="flex min-w-0 items-center gap-1">
+              <!-- Dos líneas y no una: a dos columnas la tarjeta mide
+                   173px y con truncate el nombre quedaba en "Body man…" -->
               <span
-                class="truncate font-medium group-hover:text-pink-700 dark:group-hover:text-pink-300"
+                class="line-clamp-2 font-medium group-hover:text-pink-700 dark:group-hover:text-pink-300"
               >
                 {{ item.nombre }}
               </span>
@@ -436,10 +445,10 @@ function salir() {
             <img
               :src="item.fotos[0]!.url"
               alt=""
-              class="h-32 w-full rounded-lg object-cover"
+              class="h-40 w-full rounded-lg object-cover sm:h-32"
             >
           </button>
-          <FotoPlaceholder v-else alto="h-32" />
+          <FotoPlaceholder v-else alto="h-40 sm:h-32" />
           <div class="absolute bottom-1.5 right-1.5">
             <SelectorFoto
               size="xs"
