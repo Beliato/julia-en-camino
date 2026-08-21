@@ -108,6 +108,7 @@ function editarItem(item: Item) {
 }
 
 const subiendoFotoDe = ref<number | null>(null)
+const fotoAmpliada = ref<{ url: string; alt: string } | null>(null)
 
 /** Sube una foto sin pasar por el editor.
  *
@@ -425,12 +426,19 @@ function salir() {
              al editor. Los botones quedan siempre visibles y no al pasar
              el mouse, porque en el celular no hay hover. -->
         <div class="relative mt-2">
-          <img
+          <button
             v-if="item.fotos.length > 0"
-            :src="item.fotos[0]!.url"
-            alt=""
-            class="h-32 w-full rounded-lg object-cover"
+            type="button"
+            class="block w-full"
+            :aria-label="`Ver la foto de ${item.nombre} en grande`"
+            @click="fotoAmpliada = { url: item.fotos[0]!.url, alt: item.nombre }"
           >
+            <img
+              :src="item.fotos[0]!.url"
+              alt=""
+              class="h-32 w-full rounded-lg object-cover"
+            >
+          </button>
           <FotoPlaceholder v-else alto="h-32" />
           <div class="absolute bottom-1.5 right-1.5">
             <SelectorFoto
@@ -493,6 +501,12 @@ function salir() {
       @done="items.fetchAll()"
     />
     <ItemFormModal v-if="modalForm" :item="itemEditando" @close="modalForm = false" />
+    <FotoModal
+      v-if="fotoAmpliada"
+      :url="fotoAmpliada.url"
+      :alt="fotoAmpliada.alt"
+      @close="fotoAmpliada = null"
+    />
     <AdquirirModal
       v-if="itemAdquirir"
       :item="itemAdquirir"
