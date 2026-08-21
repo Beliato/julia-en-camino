@@ -15,6 +15,8 @@ export default defineNuxtConfig({
     ...(enTests ? [] : ['@vite-pwa/nuxt']),
   ],
 
+  css: ['~/assets/css/main.css'],
+
   googleFonts: {
     families: { 'Libre Caslon Text': [400, 700] },
     display: 'swap',
