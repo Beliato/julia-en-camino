@@ -6,6 +6,7 @@ const emit = defineEmits<{ close: []; done: [] }>()
 
 const regalos = useRegalosStore()
 const items = useItemsStore()
+const categorias = useCategoriasStore()
 const toast = useToast()
 
 // Objeto: se elige uno existente o se crea acá mismo. La mayoría de los
@@ -16,6 +17,8 @@ const itemId = ref<number>(SIN_ITEM)
 const busquedaItem = ref('')
 const nombreNuevo = ref('')
 const etapa = ref<Etapa>('CUALQUIERA')
+const SIN_CATEGORIA = 0
+const categoriaId = ref<number>(SIN_CATEGORIA)
 
 const origen = ref<OrigenRegalo>('REGALO')
 const persona = ref('')
@@ -25,8 +28,17 @@ const nota = ref('')
 const guardando = ref(false)
 
 onMounted(async () => {
-  await Promise.all([items.fetchAll(), regalos.fetchPersonas()])
+  await Promise.all([
+    items.fetchAll(),
+    regalos.fetchPersonas(),
+    categorias.fetchAll(),
+  ])
 })
+
+const opcionesCategoria = computed(() => [
+  { value: SIN_CATEGORIA, label: 'Sin categoría' },
+  ...categorias.categorias.map((c) => ({ value: c.id, label: c.nombre })),
+])
 
 const itemsFiltrados = computed(() => {
   const q = busquedaItem.value.trim().toLowerCase()
@@ -64,7 +76,14 @@ async function guardar() {
   try {
     await regalos.registrar({
       ...(modoNuevo.value
-        ? { item_nuevo: { nombre: nombreNuevo.value.trim(), etapa: etapa.value } }
+        ? {
+            item_nuevo: {
+              nombre: nombreNuevo.value.trim(),
+              etapa: etapa.value,
+              categoria_id:
+                categoriaId.value === SIN_CATEGORIA ? null : categoriaId.value,
+            },
+          }
         : { item_id: itemId.value }),
       persona: origen.value === 'REGALO' ? persona.value.trim() : '',
       origen: origen.value,
@@ -124,6 +143,16 @@ async function guardar() {
           </template>
           <template v-else>
             <UInput v-model="nombreNuevo" placeholder="Nombre del objeto" autofocus />
+            <!-- USelectMenu y no USelect: este value es numérico y el
+                 select nativo devolvería el id como texto. -->
+            <USelectMenu
+              v-model="categoriaId"
+              class="mt-2"
+              :options="opcionesCategoria"
+              value-attribute="value"
+              option-attribute="label"
+              aria-label="Categoría del objeto"
+            />
             <USelect
               v-model="etapa"
               class="mt-2"

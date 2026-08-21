@@ -16,6 +16,7 @@ const toast = useToast()
 const subiendo = ref(false)
 const trabajando = ref(false)
 const confirmarBorrado = ref(false)
+const editando = ref(false)
 
 const fechaLegible = computed(() =>
   new Date(`${props.regalo.fecha}T00:00:00`).toLocaleDateString('es', {
@@ -99,14 +100,24 @@ async function borrar() {
           {{ fechaLegible }}
         </p>
       </div>
-      <UButton
-        variant="ghost"
-        color="gray"
-        icon="i-heroicons-trash"
-        size="xs"
-        :aria-label="`Eliminar regalo ${props.regalo.item.nombre}`"
-        @click="confirmarBorrado = true"
-      />
+      <div class="flex shrink-0 items-center">
+        <UButton
+          variant="ghost"
+          color="gray"
+          icon="i-heroicons-pencil"
+          size="xs"
+          :aria-label="`Corregir regalo ${props.regalo.item.nombre}`"
+          @click="editando = true"
+        />
+        <UButton
+          variant="ghost"
+          color="gray"
+          icon="i-heroicons-trash"
+          size="xs"
+          :aria-label="`Eliminar regalo ${props.regalo.item.nombre}`"
+          @click="confirmarBorrado = true"
+        />
+      </div>
     </div>
 
     <p
@@ -166,6 +177,13 @@ async function borrar() {
         {{ props.regalo.agradecido ? 'Desmarcar' : 'Ya agradecí' }}
       </UButton>
     </div>
+
+    <EditarRegaloModal
+      v-if="editando"
+      :regalo="props.regalo"
+      @close="editando = false"
+      @saved="emit('cambio')"
+    />
 
     <ConfirmModal
       v-if="confirmarBorrado"
