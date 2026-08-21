@@ -1,0 +1,19 @@
+/* Safari en iOS agranda la página sola al enfocar un control cuya letra
+   mide menos de 16px, y después no la devuelve: hay que pellizcar la
+   pantalla para volver a encuadrarla. Nuxt UI usa 14px en sus campos,
+   así que tocar cualquier input en el iPhone dejaba la página con zoom
+   y los modales, que son `position: fixed`, aparecían más anchos que la
+   pantalla y cortados a la derecha.
+
+   Se sube a 16px solo en pantallas chicas; desde `sm` vuelve el tamaño
+   de siempre, que en escritorio se ve mejor y donde este zoom no existe.
+
+   Va con !important porque Nuxt UI aplica el tamaño como clase
+   (`text-sm`), que le gana por especificidad a un selector de elemento. */
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
