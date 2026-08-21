@@ -17,8 +17,15 @@ withDefaults(
     cargando?: boolean
     etiqueta?: string
     size?: 'xs' | 'sm'
+    /** Solo íconos, para montarlo encima de una foto sin taparla. */
+    compacto?: boolean
   }>(),
-  { cargando: false, etiqueta: 'Agregar foto', size: 'sm' },
+  {
+    cargando: false,
+    etiqueta: 'Agregar foto',
+    size: 'sm',
+    compacto: false,
+  },
 )
 
 const emit = defineEmits<{ seleccion: [file: File] }>()
@@ -52,22 +59,26 @@ async function onArchivo(e: Event) {
   <div class="flex flex-wrap items-center gap-2">
     <UButton
       v-if="tactil"
-      variant="outline"
+      :variant="compacto ? 'solid' : 'outline'"
+      :color="compacto ? 'white' : 'primary'"
       :size="size"
       icon="i-heroicons-camera"
       :loading="cargando || preparando"
+      :aria-label="compacto ? 'Tomar foto' : undefined"
       @click="inputCamara?.click()"
     >
-      Tomar foto
+      <template v-if="!compacto">Tomar foto</template>
     </UButton>
     <UButton
-      variant="outline"
+      :variant="compacto ? 'solid' : 'outline'"
+      :color="compacto ? 'white' : 'primary'"
       :size="size"
       icon="i-heroicons-photo"
       :loading="cargando || preparando"
+      :aria-label="compacto ? etiqueta : undefined"
       @click="inputGaleria?.click()"
     >
-      {{ tactil ? 'Galería' : etiqueta }}
+      <template v-if="!compacto">{{ tactil ? 'Galería' : etiqueta }}</template>
     </UButton>
 
     <input

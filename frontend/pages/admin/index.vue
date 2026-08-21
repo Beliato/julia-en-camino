@@ -102,14 +102,42 @@ const badge = {
   ADQUIRIDO: { color: 'green' as const, label: 'Lo tenemos' },
 }
 
+function editarItem(item: Item) {
+  itemEditando.value = item
+  modalForm.value = true
+}
+
+const subiendoFotoDe = ref<number | null>(null)
+
+/** Sube una foto sin pasar por el editor.
+ *
+ * `items.subirFoto` la agrega al item del store, así que la tarjeta
+ * cambia sola de placeholder a foto.
+ */
+async function subirFotoDeTarjeta(item: Item, file: File) {
+  subiendoFotoDe.value = item.id
+  try {
+    await items.subirFoto(item.id, file)
+    toast.add({ title: 'Foto agregada', color: 'green' })
+  } catch {
+    toast.add({
+      title: 'No se pudo subir la foto',
+      description: 'Solo jpeg/png/webp de hasta 5 MB.',
+      color: 'red',
+    })
+  } finally {
+    subiendoFotoDe.value = null
+  }
+}
+
 function acciones(item: Item) {
+  // Editar sigue acá aunque ahora el título también abra el editor: la
+  // redundancia no molesta en un menú plegado, y quien no descubra que
+  // el título es clickeable igual encuentra por dónde.
   const editar = {
     label: 'Editar',
     icon: 'i-heroicons-pencil',
-    click: () => {
-      itemEditando.value = item
-      modalForm.value = true
-    },
+    click: () => editarItem(item),
   }
   const grupos = [[editar]]
 
@@ -354,15 +382,34 @@ function salir() {
     <div v-else class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <UCard v-for="item in itemsFiltrados" :key="item.id">
         <div class="flex items-start justify-between gap-2">
-          <div class="min-w-0">
-            <p class="truncate font-medium">{{ item.nombre }}</p>
-            <p
+          <!-- El título abre el editor: es la acción más frecuente y
+               antes estaba a dos clicks, dentro del menú. Se usa un
+               <button> y no la tarjeta entera porque acá adentro ya hay
+               otros elementos clickeables. -->
+          <button
+            type="button"
+            class="group min-w-0 text-left"
+            :aria-label="`Editar ${item.nombre}`"
+            @click="editarItem(item)"
+          >
+            <span class="flex min-w-0 items-center gap-1">
+              <span
+                class="truncate font-medium group-hover:text-pink-700 dark:group-hover:text-pink-300"
+              >
+                {{ item.nombre }}
+              </span>
+              <UIcon
+                name="i-heroicons-pencil"
+                class="h-3.5 w-3.5 shrink-0 text-pink-600 opacity-0 transition-opacity group-hover:opacity-100 dark:text-pink-300"
+              />
+            </span>
+            <span
               v-if="item.descripcion"
               class="mt-0.5 line-clamp-2 text-sm text-gray-500 dark:text-gray-400"
             >
               {{ item.descripcion }}
-            </p>
-          </div>
+            </span>
+          </button>
           <UDropdown :items="acciones(item)">
             <UButton
               variant="ghost"
@@ -373,13 +420,28 @@ function salir() {
           </UDropdown>
         </div>
 
-        <img
-          v-if="item.fotos.length > 0"
-          :src="item.fotos[0]!.url"
-          alt=""
-          class="mt-2 h-32 w-full rounded-lg object-cover"
-        >
-        <FotoPlaceholder v-else alto="h-32" class="mt-2" />
+        <!-- La foto es tambien la zona para subirla: antes el placeholder
+             era decoracion muerta y agregar una imagen obligaba a entrar
+             al editor. Los botones quedan siempre visibles y no al pasar
+             el mouse, porque en el celular no hay hover. -->
+        <div class="relative mt-2">
+          <img
+            v-if="item.fotos.length > 0"
+            :src="item.fotos[0]!.url"
+            alt=""
+            class="h-32 w-full rounded-lg object-cover"
+          >
+          <FotoPlaceholder v-else alto="h-32" />
+          <div class="absolute bottom-1.5 right-1.5">
+            <SelectorFoto
+              size="xs"
+              compacto
+              :cargando="subiendoFotoDe === item.id"
+              :etiqueta="`Agregar foto a ${item.nombre}`"
+              @seleccion="(file: File) => subirFotoDeTarjeta(item, file)"
+            />
+          </div>
+        </div>
 
         <UButton
           v-if="item.reservas_activas > 0"
