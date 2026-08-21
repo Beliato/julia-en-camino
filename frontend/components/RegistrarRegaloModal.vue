@@ -6,6 +6,7 @@ const emit = defineEmits<{ close: []; done: [] }>()
 
 const regalos = useRegalosStore()
 const items = useItemsStore()
+const categorias = useCategoriasStore()
 const toast = useToast()
 
 // Objeto: se elige uno existente o se crea acá mismo. La mayoría de los
@@ -16,6 +17,11 @@ const itemId = ref<number>(SIN_ITEM)
 const busquedaItem = ref('')
 const nombreNuevo = ref('')
 const etapa = ref<Etapa>('CUALQUIERA')
+// -1 y no 0: USelectMenu resuelve la etiqueta con `if (!modelValue)`
+// (SelectMenu.vue:402), así que un centinela falsy se muestra como
+// campo vacío en vez de "Sin categoría".
+const SIN_CATEGORIA = -1
+const categoriaId = ref<number>(SIN_CATEGORIA)
 
 const origen = ref<OrigenRegalo>('REGALO')
 const persona = ref('')
@@ -25,8 +31,17 @@ const nota = ref('')
 const guardando = ref(false)
 
 onMounted(async () => {
-  await Promise.all([items.fetchAll(), regalos.fetchPersonas()])
+  await Promise.all([
+    items.fetchAll(),
+    regalos.fetchPersonas(),
+    categorias.fetchAll(),
+  ])
 })
+
+const opcionesCategoria = computed(() => [
+  { value: SIN_CATEGORIA, label: 'Sin categoría' },
+  ...categorias.categorias.map((c) => ({ value: c.id, label: c.nombre })),
+])
 
 const itemsFiltrados = computed(() => {
   const q = busquedaItem.value.trim().toLowerCase()
@@ -64,7 +79,14 @@ async function guardar() {
   try {
     await regalos.registrar({
       ...(modoNuevo.value
-        ? { item_nuevo: { nombre: nombreNuevo.value.trim(), etapa: etapa.value } }
+        ? {
+            item_nuevo: {
+              nombre: nombreNuevo.value.trim(),
+              etapa: etapa.value,
+              categoria_id:
+                categoriaId.value === SIN_CATEGORIA ? null : categoriaId.value,
+            },
+          }
         : { item_id: itemId.value }),
       persona: origen.value === 'REGALO' ? persona.value.trim() : '',
       origen: origen.value,
@@ -91,8 +113,21 @@ async function guardar() {
 </script>
 
 <template>
-  <UModal :model-value="true" @update:model-value="emit('close')">
-    <UCard>
+  <!-- Tope de alto con el cuerpo scrolleable y los botones anclados
+       abajo. Sin esto el modal medía 671px y en una laptop de 620px el
+       botón Registrar quedaba fuera de la pantalla: se llegaba
+       scrolleando, pero no se veía que hubiera que hacerlo. -->
+  <UModal
+    :model-value="true"
+    :ui="{ height: 'max-h-[85vh]' }"
+    @update:model-value="emit('close')"
+  >
+    <UCard
+      :ui="{
+        base: 'flex max-h-[85vh] flex-col',
+        body: { base: 'min-h-0 flex-1 overflow-y-auto' },
+      }"
+    >
       <template #header>
         <h3 class="text-lg font-medium">Registrar un regalo</h3>
         <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
@@ -100,7 +135,7 @@ async function guardar() {
         </p>
       </template>
 
-      <form class="space-y-4" @submit.prevent="guardar">
+      <form id="form-registrar-regalo" class="space-y-4" @submit.prevent="guardar">
         <UFormGroup label="¿Qué recibieron?" required>
           <template v-if="!modoNuevo">
             <USelectMenu
@@ -124,6 +159,16 @@ async function guardar() {
           </template>
           <template v-else>
             <UInput v-model="nombreNuevo" placeholder="Nombre del objeto" autofocus />
+            <!-- USelectMenu y no USelect: este value es numérico y el
+                 select nativo devolvería el id como texto. -->
+            <USelectMenu
+              v-model="categoriaId"
+              class="mt-2"
+              :options="opcionesCategoria"
+              value-attribute="value"
+              option-attribute="label"
+              aria-label="Categoría del objeto"
+            />
             <USelect
               v-model="etapa"
               class="mt-2"
@@ -161,7 +206,11 @@ async function guardar() {
           </div>
         </UFormGroup>
 
-        <div class="grid grid-cols-2 gap-3">
+        <!-- Apilados en celular. En dos columnas el input de fecha recibe
+             122px y su min-content es 144: Safari de iOS no encoge por
+             debajo de ese mínimo y empuja el modal a lo ancho, obligando
+             a pellizcar la pantalla. -->
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <UFormGroup label="¿Cuántos?">
             <UInput v-model.number="cantidad" type="number" min="1" max="99" />
           </UFormGroup>
@@ -174,15 +223,25 @@ async function guardar() {
           <UTextarea v-model="nota" :rows="2" placeholder="Algo para recordar…" />
         </UFormGroup>
 
+      </form>
+
+      <!-- Los botones salen del <form> para quedar anclados en el pie;
+           el atributo form los mantiene atados al submit. -->
+      <template #footer>
         <div class="flex justify-end gap-2">
           <UButton variant="ghost" color="gray" @click="emit('close')">
             Cancelar
           </UButton>
-          <UButton type="submit" :loading="guardando" :disabled="!puedeGuardar">
+          <UButton
+            type="submit"
+            form="form-registrar-regalo"
+            :loading="guardando"
+            :disabled="!puedeGuardar"
+          >
             Registrar
           </UButton>
         </div>
-      </form>
+      </template>
     </UCard>
   </UModal>
 </template>

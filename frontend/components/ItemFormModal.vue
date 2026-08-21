@@ -9,7 +9,10 @@ const items = useItemsStore()
 const categorias = useCategoriasStore()
 const toast = useToast()
 
-const SIN_CATEGORIA = 0
+// -1 y no 0: USelectMenu resuelve la etiqueta con `if (!modelValue)`
+// (SelectMenu.vue:402), así que con 0 el campo se veía vacío en lugar
+// de "Sin categoría".
+const SIN_CATEGORIA = -1
 
 const nombre = ref(props.item?.nombre ?? '')
 const descripcion = ref(props.item?.descripcion ?? '')
