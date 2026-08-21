@@ -17,7 +17,10 @@ const itemId = ref<number>(SIN_ITEM)
 const busquedaItem = ref('')
 const nombreNuevo = ref('')
 const etapa = ref<Etapa>('CUALQUIERA')
-const SIN_CATEGORIA = 0
+// -1 y no 0: USelectMenu resuelve la etiqueta con `if (!modelValue)`
+// (SelectMenu.vue:402), así que un centinela falsy se muestra como
+// campo vacío en vez de "Sin categoría".
+const SIN_CATEGORIA = -1
 const categoriaId = ref<number>(SIN_CATEGORIA)
 
 const origen = ref<OrigenRegalo>('REGALO')
@@ -110,8 +113,21 @@ async function guardar() {
 </script>
 
 <template>
-  <UModal :model-value="true" @update:model-value="emit('close')">
-    <UCard>
+  <!-- Tope de alto con el cuerpo scrolleable y los botones anclados
+       abajo. Sin esto el modal medía 671px y en una laptop de 620px el
+       botón Registrar quedaba fuera de la pantalla: se llegaba
+       scrolleando, pero no se veía que hubiera que hacerlo. -->
+  <UModal
+    :model-value="true"
+    :ui="{ height: 'max-h-[85vh]' }"
+    @update:model-value="emit('close')"
+  >
+    <UCard
+      :ui="{
+        base: 'flex max-h-[85vh] flex-col',
+        body: { base: 'min-h-0 flex-1 overflow-y-auto' },
+      }"
+    >
       <template #header>
         <h3 class="text-lg font-medium">Registrar un regalo</h3>
         <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
@@ -119,7 +135,7 @@ async function guardar() {
         </p>
       </template>
 
-      <form class="space-y-4" @submit.prevent="guardar">
+      <form id="form-registrar-regalo" class="space-y-4" @submit.prevent="guardar">
         <UFormGroup label="¿Qué recibieron?" required>
           <template v-if="!modoNuevo">
             <USelectMenu
@@ -203,15 +219,25 @@ async function guardar() {
           <UTextarea v-model="nota" :rows="2" placeholder="Algo para recordar…" />
         </UFormGroup>
 
+      </form>
+
+      <!-- Los botones salen del <form> para quedar anclados en el pie;
+           el atributo form los mantiene atados al submit. -->
+      <template #footer>
         <div class="flex justify-end gap-2">
           <UButton variant="ghost" color="gray" @click="emit('close')">
             Cancelar
           </UButton>
-          <UButton type="submit" :loading="guardando" :disabled="!puedeGuardar">
+          <UButton
+            type="submit"
+            form="form-registrar-regalo"
+            :loading="guardando"
+            :disabled="!puedeGuardar"
+          >
             Registrar
           </UButton>
         </div>
-      </form>
+      </template>
     </UCard>
   </UModal>
 </template>
