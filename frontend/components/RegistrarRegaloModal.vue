@@ -206,7 +206,11 @@ async function guardar() {
           </div>
         </UFormGroup>
 
-        <div class="grid grid-cols-2 gap-3">
+        <!-- Apilados en celular. En dos columnas el input de fecha recibe
+             122px y su min-content es 144: Safari de iOS no encoge por
+             debajo de ese mínimo y empuja el modal a lo ancho, obligando
+             a pellizcar la pantalla. -->
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <UFormGroup label="¿Cuántos?">
             <UInput v-model.number="cantidad" type="number" min="1" max="99" />
           </UFormGroup>

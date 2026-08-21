@@ -98,7 +98,9 @@ async function guardar() {
           Está anotado como comprado por ustedes.
         </p>
 
-        <div class="grid grid-cols-2 gap-3">
+        <!-- Apilados en celular: ver la nota en RegistrarRegaloModal
+             sobre el ancho mínimo del input de fecha en iOS. -->
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <UFormGroup label="¿Cuántos?">
             <UInput v-model.number="cantidad" type="number" min="1" max="99" />
           </UFormGroup>
