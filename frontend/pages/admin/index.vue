@@ -11,6 +11,7 @@ definePageMeta({ middleware: 'auth' })
 
 const auth = useAuthStore()
 const items = useItemsStore()
+const categorias = useCategoriasStore()
 const router = useRouter()
 const toast = useToast()
 
@@ -22,6 +23,15 @@ const itemCaja = ref<Item | null>(null)
 const itemEliminar = ref<Item | null>(null)
 const filtro = ref<'TODOS' | 'NECESITADO' | 'RESERVADO' | 'ADQUIRIDO'>('TODOS')
 const filtroEtapa = ref<Etapa | 'TODAS'>('TODAS')
+/** Id de categoría como texto, o 'TODAS' / 'SIN'.
+ *
+ * Va como string a propósito: USelect monta un `<select>` nativo y el
+ * DOM devuelve siempre texto, así que guardar el id numérico haría que
+ * la comparación estricta fallara sin dar señal — el filtro se vería
+ * bien y no devolvería ningún item. 'SIN' es para los que quedaron sin
+ * categoría, que de otro modo no habría forma de encontrar.
+ */
+const filtroCategoria = ref<string>('TODAS')
 const modalRegistrar = ref(false)
 
 const busqueda = ref('')
@@ -30,7 +40,11 @@ const buscando = ref(false)
 
 onMounted(async () => {
   auth.fetchMe()
-  await Promise.all([items.fetchAll(), items.fetchPendientes()])
+  await Promise.all([
+    items.fetchAll(),
+    items.fetchPendientes(),
+    categorias.fetchAll(),
+  ])
 })
 
 watchDebounced(
@@ -50,13 +64,42 @@ watchDebounced(
   { debounce: 300 },
 )
 
+function coincideCategoria(item: Item): boolean {
+  if (filtroCategoria.value === 'TODAS') return true
+  if (filtroCategoria.value === 'SIN') return !item.categoria
+  return String(item.categoria?.id) === filtroCategoria.value
+}
+
 const itemsFiltrados = computed(() =>
   items.items.filter(
     (i) =>
       (filtro.value === 'TODOS' || i.estado === filtro.value) &&
-      (filtroEtapa.value === 'TODAS' || i.etapa === filtroEtapa.value),
+      (filtroEtapa.value === 'TODAS' || i.etapa === filtroEtapa.value) &&
+      coincideCategoria(i),
   ),
 )
+
+const hayFiltrosActivos = computed(
+  () =>
+    filtro.value !== 'TODOS' ||
+    filtroEtapa.value !== 'TODAS' ||
+    filtroCategoria.value !== 'TODAS',
+)
+
+const opcionesFiltroCategoria = computed(() => [
+  { value: 'TODAS', label: 'Todas las categorías' },
+  ...categorias.categorias.map((c) => ({
+    value: String(c.id),
+    label: c.nombre,
+  })),
+  { value: 'SIN', label: 'Sin categoría' },
+])
+
+function limpiarFiltros() {
+  filtro.value = 'TODOS'
+  filtroEtapa.value = 'TODAS'
+  filtroCategoria.value = 'TODAS'
+}
 
 const badge = {
   NECESITADO: { color: 'gray' as const, label: 'Por comprar' },
@@ -249,26 +292,52 @@ function salir() {
       </ul>
     </UCard>
 
-    <div class="flex flex-wrap gap-2">
-      <UButton
-        v-for="f in (['TODOS', 'NECESITADO', 'RESERVADO', 'ADQUIRIDO'] as const)"
-        :key="f"
-        size="xs"
-        :variant="filtro === f ? 'solid' : 'outline'"
-        @click="filtro = f"
-      >
-        {{ f === 'TODOS' ? 'Todos' : badge[f].label }}
-      </UButton>
-      <USelect
-        v-model="filtroEtapa"
-        size="xs"
-        class="ml-auto w-44"
-        aria-label="Filtrar por etapa"
-        :options="[
-          { value: 'TODAS', label: 'Todas las etapas' },
-          ...ETAPAS.map((e) => ({ value: e, label: ETAPA_LABEL[e] })),
-        ]"
-      />
+    <div class="space-y-2">
+      <div class="flex flex-wrap gap-2">
+        <UButton
+          v-for="f in (['TODOS', 'NECESITADO', 'RESERVADO', 'ADQUIRIDO'] as const)"
+          :key="f"
+          size="xs"
+          :variant="filtro === f ? 'solid' : 'outline'"
+          @click="filtro = f"
+        >
+          {{ f === 'TODOS' ? 'Todos' : badge[f].label }}
+        </UButton>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <USelect
+          v-model="filtroCategoria"
+          size="xs"
+          class="w-48"
+          aria-label="Filtrar por categoría"
+          :options="opcionesFiltroCategoria"
+        />
+        <USelect
+          v-model="filtroEtapa"
+          size="xs"
+          class="w-44"
+          aria-label="Filtrar por etapa"
+          :options="[
+            { value: 'TODAS', label: 'Todas las etapas' },
+            ...ETAPAS.map((e) => ({ value: e, label: ETAPA_LABEL[e] })),
+          ]"
+        />
+        <UButton
+          v-if="hayFiltrosActivos"
+          variant="link"
+          size="xs"
+          icon="i-heroicons-x-mark"
+          @click="limpiarFiltros"
+        >
+          Limpiar
+        </UButton>
+        <span
+          v-if="hayFiltrosActivos"
+          class="ml-auto text-xs text-gray-500 dark:text-gray-400"
+        >
+          {{ itemsFiltrados.length }} de {{ items.items.length }}
+        </span>
+      </div>
     </div>
 
     <div v-if="items.cargando" class="py-10 text-center">
@@ -276,9 +345,15 @@ function salir() {
     </div>
 
     <UCard v-else-if="itemsFiltrados.length === 0">
-      <p class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-        No hay items aquí todavía. ¡Agregá el primero con "Nuevo item"!
-      </p>
+      <div class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+        <template v-if="hayFiltrosActivos">
+          <p>Ningún item coincide con estos filtros.</p>
+          <UButton variant="link" size="xs" class="mt-1" @click="limpiarFiltros">
+            Ver todos
+          </UButton>
+        </template>
+        <p v-else>No hay items aquí todavía. ¡Agregá el primero con "Nuevo item"!</p>
+      </div>
     </UCard>
 
     <div v-else class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
