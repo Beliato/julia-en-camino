@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Etapa, Item, Prioridad, RangoPrecio } from '~/types/api'
+import type { Etapa, Item, RangoPrecio } from '~/types/api'
 import { ETAPAS, ETAPA_LABEL } from '~/types/api'
 
 const props = defineProps<{ item?: Item | null }>()
@@ -15,7 +15,6 @@ const nombre = ref(props.item?.nombre ?? '')
 const descripcion = ref(props.item?.descripcion ?? '')
 const amazonLink = ref(props.item?.amazon_link ?? '')
 const cantidad = ref(props.item?.cantidad ?? 1)
-const prioridad = ref<Prioridad>(props.item?.prioridad ?? 'NORMAL')
 const rangoPrecio = ref<RangoPrecio | ''>(props.item?.rango_precio ?? '')
 const categoriaId = ref<number>(props.item?.categoria?.id ?? SIN_CATEGORIA)
 const etapa = ref<Etapa>(props.item?.etapa ?? 'CUALQUIERA')
@@ -122,7 +121,9 @@ async function guardar() {
       descripcion: descripcion.value.trim() || null,
       amazon_link: amazonLink.value.trim() || null,
       cantidad: cantidad.value,
-      prioridad: prioridad.value,
+      // prioridad no se manda a proposito: sigue existiendo en el backend
+      // (ordena la wishlist publica) pero ya no se edita desde acá. Al
+      // omitirla, ItemUpdate la deja como está en vez de pisarla.
       rango_precio: rangoPrecio.value || null,
       categoria_id: catId,
       etapa: etapa.value,
@@ -224,17 +225,6 @@ async function quitarFoto(fotoId: number) {
           <USelect
             v-model="etapa"
             :options="ETAPAS.map((e) => ({ value: e, label: ETAPA_LABEL[e] }))"
-          />
-        </UFormGroup>
-
-        <UFormGroup label="Prioridad">
-          <USelect
-            v-model="prioridad"
-            :options="[
-              { value: 'URGENTE', label: 'Urgente — hace falta ya' },
-              { value: 'NORMAL', label: 'Normal' },
-              { value: 'PUEDE_ESPERAR', label: 'Puede esperar' },
-            ]"
           />
         </UFormGroup>
 

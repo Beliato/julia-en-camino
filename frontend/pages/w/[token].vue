@@ -303,17 +303,7 @@ async function deshacer(itemId: number) {
                 class="mb-3 h-40 w-full rounded-lg object-cover"
               >
               <FotoPlaceholder v-else alto="h-40" class="mb-3" />
-              <div class="flex items-start justify-between gap-2">
-                <p class="font-medium">{{ item.nombre }}</p>
-                <UBadge
-                  v-if="item.prioridad === 'URGENTE'"
-                  color="red"
-                  variant="subtle"
-                  size="xs"
-                >
-                  Urgente
-                </UBadge>
-              </div>
+              <p class="font-medium">{{ item.nombre }}</p>
               <p
                 v-if="item.descripcion"
                 class="mt-1 text-sm text-gray-500 dark:text-gray-400"
