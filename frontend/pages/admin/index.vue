@@ -42,16 +42,19 @@ onMounted(async () => {
   ])
 })
 
+/** Qué se está buscando: texto libre o «From: nombre». */
+const criterio = computed(() => interpretarBusqueda(busqueda.value))
+
 watchDebounced(
   busqueda,
-  async (q: string) => {
-    if (!q.trim()) {
+  async () => {
+    if (!criterio.value) {
       resultados.value = null
       return
     }
     buscando.value = true
     try {
-      resultados.value = await items.buscar(q.trim())
+      resultados.value = await items.buscar(criterio.value)
     } finally {
       buscando.value = false
     }
@@ -272,7 +275,7 @@ function salir() {
     <UInput
       v-model="busqueda"
       icon="i-heroicons-magnifying-glass"
-      placeholder="Buscar algo y ver en qué caja está…"
+      placeholder="Buscar algo, o «From: nombre» para ver qué regaló alguien"
       :loading="buscando"
       aria-label="Buscar items"
     />
@@ -281,10 +284,17 @@ function salir() {
       <template #header>
         <h3 class="text-sm font-medium">
           {{ resultados.length }} resultado{{ resultados.length === 1 ? '' : 's' }}
+          <span v-if="criterio?.persona" class="text-pink-700 dark:text-pink-300">
+            de «{{ criterio.persona }}»
+          </span>
         </h3>
       </template>
       <p v-if="resultados.length === 0" class="text-sm text-gray-500 dark:text-gray-400">
-        No encontramos nada con «{{ busqueda }}».
+        {{
+          criterio?.persona
+            ? `No hay regalos registrados de «${criterio.persona}».`
+            : `No encontramos nada con «${busqueda}».`
+        }}
       </p>
       <ul v-else class="divide-y divide-neutral-200 dark:divide-neutral-800">
         <li

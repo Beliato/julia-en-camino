@@ -88,30 +88,48 @@ def listar_items(
 
 @router.get("/buscar", response_model=list[ItemBusquedaOut])
 def buscar_items(
-    q: str = Query(min_length=1, max_length=100),
+    q: str | None = Query(default=None, max_length=100),
+    persona: str | None = Query(default=None, max_length=255),
     etapa: Etapa | None = None,
     db: Session = Depends(get_db),
     _: Admin = Depends(get_current_admin),
 ):
-    """Busca por nombre y descripción, ignorando mayúsculas y acentos.
+    """Busca por nombre y descripción, o por quién lo regaló.
 
     Devuelve lo necesario para responder de una: dónde está guardado, para
     qué etapa sirve y quién lo regaló.
+
+    `persona` trae los objetos que regaló alguien, con coincidencia
+    parcial: es la búsqueda "¿qué me regaló fulano?", que de otro modo
+    obliga a recorrer la lista entera a ojo.
     """
-    normalizado = q.strip().translate(str.maketrans(_ACENTOS_DESDE, _ACENTOS_HASTA))
-    patron = f"%{normalizado.lower()}%"
+    if not (q or "").strip() and not (persona or "").strip():
+        raise HTTPException(
+            status_code=422, detail="Indicá un texto a buscar o una persona"
+        )
 
     def sin_acentos(col):
         return func.translate(func.lower(col), _ACENTOS_DESDE, _ACENTOS_HASTA)
 
-    query = (
-        db.query(Item)
-        .options(selectinload(Item.caja), selectinload(Item.regalos))
-        .filter(
+    def patron_de(texto: str) -> str:
+        normalizado = texto.strip().translate(
+            str.maketrans(_ACENTOS_DESDE, _ACENTOS_HASTA)
+        )
+        return f"%{normalizado.lower()}%"
+
+    query = db.query(Item).options(selectinload(Item.caja), selectinload(Item.regalos))
+
+    if (q or "").strip():
+        patron = patron_de(q)
+        query = query.filter(
             sin_acentos(Item.nombre).like(patron)
             | sin_acentos(func.coalesce(Item.descripcion, "")).like(patron)
         )
-    )
+
+    if (persona or "").strip():
+        query = query.filter(
+            Item.regalos.any(sin_acentos(Regalo.persona).like(patron_de(persona)))
+        )
     if etapa is not None:
         query = query.filter(Item.etapa == etapa)
     return query.order_by(Item.nombre).limit(50).all()

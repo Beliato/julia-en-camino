@@ -148,11 +148,20 @@ describe('store items', () => {
         caja: { id: 3, etiqueta: 'Caja B', descripcion: 'Closet' },
       },
     ])
-    const res = await store.buscar('termo')
+    const res = await store.buscar({ q: 'termo' })
     expect(apiMock).toHaveBeenCalledWith('/items/buscar', {
       query: { q: 'termo' },
     })
     expect(res[0]!.caja!.etiqueta).toBe('Caja B')
+  })
+
+  it('buscar por persona manda ese criterio', async () => {
+    const store = useItemsStore()
+    apiMock.mockResolvedValue([])
+    await store.buscar({ persona: 'Hannia' })
+    expect(apiMock).toHaveBeenCalledWith('/items/buscar', {
+      query: { persona: 'Hannia' },
+    })
   })
 
   it('eliminar saca el item del listado', async () => {
