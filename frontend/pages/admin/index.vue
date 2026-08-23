@@ -114,6 +114,17 @@ function editarItem(item: Item) {
   modalForm.value = true
 }
 
+/** El resultado de búsqueda es una vista reducida del item; el editor
+ *  necesita el completo, que ya vino en el listado del catálogo. */
+function editarDesdeBusqueda(id: number) {
+  const item = items.items.find((i) => i.id === id)
+  if (!item) {
+    toast.add({ title: 'No pude abrir ese item', color: 'red' })
+    return
+  }
+  editarItem(item)
+}
+
 const subiendoFotoDe = ref<number | null>(null)
 const fotoAmpliada = ref<{ url: string; alt: string } | null>(null)
 
@@ -309,7 +320,32 @@ function salir() {
           :key="r.id"
           class="flex flex-wrap items-center justify-between gap-2 py-2"
         >
-          <span class="text-sm font-medium">{{ r.nombre }}</span>
+          <!-- Miniatura y nombre abren el editor: encontrar algo casi
+               siempre es el paso previo a corregirlo, y desde acá había
+               que salir a buscarlo de nuevo en la grilla. -->
+          <button
+            type="button"
+            class="group flex min-w-0 items-center gap-2 text-left"
+            :aria-label="`Editar ${r.nombre}`"
+            @click="editarDesdeBusqueda(r.id)"
+          >
+            <img
+              v-if="r.fotos.length > 0"
+              :src="r.fotos[0]!.url"
+              alt=""
+              class="h-10 w-10 shrink-0 rounded-md object-cover"
+            >
+            <!-- En un envoltorio y no con la clase suelta: FotoPlaceholder
+                 ya trae w-full, que competiría con un w-10 encima. -->
+            <div v-else class="h-10 w-10 shrink-0">
+              <FotoPlaceholder alto="h-10" />
+            </div>
+            <span
+              class="truncate text-sm font-medium group-hover:text-pink-700 dark:group-hover:text-pink-300"
+            >
+              {{ r.nombre }}
+            </span>
+          </button>
           <UBadge color="gray" variant="subtle">
             {{ ETAPA_LABEL[r.etapa] }}
           </UBadge>

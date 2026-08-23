@@ -122,6 +122,8 @@ class ItemBusquedaOut(BaseModel):
     etapa: Etapa
     personas: list[str] = []
     caja: CajaOut | None = None
+    # Para la miniatura en la lista de resultados
+    fotos: list[FotoItemOut] = []
 
     class Config:
         from_attributes = True

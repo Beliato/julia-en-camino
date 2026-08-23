@@ -67,3 +67,21 @@ class TestBuscarPorPersona:
 
         r = client.get("/items/buscar?q=body", headers=auth_headers)
         assert [i["nombre"] for i in r.json()] == ["Body manga corta"]
+
+
+class TestMiniaturaEnResultados:
+    def test_la_busqueda_devuelve_las_fotos(self, client, auth_headers, db):
+        from app.models.item import FotoItem
+
+        item = _con_regalo(db, "Mecedora", "Hannia Solano")
+        db.add(FotoItem(item_id=item.id, url="https://r2.dev/x.webp", orden=0))
+        db.commit()
+
+        r = client.get("/items/buscar?q=mecedora", headers=auth_headers)
+        assert r.json()[0]["fotos"][0]["url"] == "https://r2.dev/x.webp"
+
+    def test_sin_fotos_devuelve_lista_vacia(self, client, auth_headers, db):
+        _con_regalo(db, "Cambiador", "Ana")
+
+        r = client.get("/items/buscar?q=cambiador", headers=auth_headers)
+        assert r.json()[0]["fotos"] == []

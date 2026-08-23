@@ -72,6 +72,7 @@ export interface ItemBusqueda {
   etapa: Etapa
   personas: string[]
   caja: Caja | null
+  fotos: FotoItem[]
 }
 
 export interface FotoRegalo {

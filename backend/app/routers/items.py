@@ -117,7 +117,11 @@ def buscar_items(
         )
         return f"%{normalizado.lower()}%"
 
-    query = db.query(Item).options(selectinload(Item.caja), selectinload(Item.regalos))
+    query = db.query(Item).options(
+        selectinload(Item.caja),
+        selectinload(Item.regalos),
+        selectinload(Item.fotos),
+    )
 
     if (q or "").strip():
         patron = patron_de(q)
