@@ -21,6 +21,8 @@ const etapa = ref<Etapa>('CUALQUIERA')
 // (SelectMenu.vue:402), así que un centinela falsy se muestra como
 // campo vacío en vez de "Sin categoría".
 const SIN_CATEGORIA = -1
+const nuevaCategoria = ref('')
+const creandoCategoria = ref(false)
 const categoriaId = ref<number>(SIN_CATEGORIA)
 
 const origen = ref<OrigenRegalo>('REGALO')
@@ -73,18 +75,35 @@ const puedeGuardar = computed(() => {
   return objetoOk && personaOk
 })
 
+/** Id de la categoría a usar, creándola antes si hace falta. */
+async function resolverCategoria(): Promise<number | null> {
+  if (creandoCategoria.value && nuevaCategoria.value.trim()) {
+    const nombre = nuevaCategoria.value.trim()
+    // El nombre de categoría es único en la base. Si ya existe se
+    // reutiliza: fallar el registro entero del regalo por un duplicado
+    // sería desproporcionado, y escribir una que ya está es habitual.
+    const existente = categorias.categorias.find(
+      (c) => c.nombre.toLowerCase() === nombre.toLowerCase(),
+    )
+    if (existente) return existente.id
+    const creada = await categorias.crear(nombre)
+    return creada.id
+  }
+  return categoriaId.value === SIN_CATEGORIA ? null : categoriaId.value
+}
+
 async function guardar() {
   if (!puedeGuardar.value) return
   guardando.value = true
   try {
+    const categoria_id = modoNuevo.value ? await resolverCategoria() : null
     await regalos.registrar({
       ...(modoNuevo.value
         ? {
             item_nuevo: {
               nombre: nombreNuevo.value.trim(),
               etapa: etapa.value,
-              categoria_id:
-                categoriaId.value === SIN_CATEGORIA ? null : categoriaId.value,
+              categoria_id,
             },
           }
         : { item_id: itemId.value }),
@@ -162,6 +181,7 @@ async function guardar() {
             <!-- USelectMenu y no USelect: este value es numérico y el
                  select nativo devolvería el id como texto. -->
             <USelectMenu
+              v-if="!creandoCategoria"
               v-model="categoriaId"
               class="mt-2"
               :options="opcionesCategoria"
@@ -169,6 +189,26 @@ async function guardar() {
               option-attribute="label"
               aria-label="Categoría del objeto"
             />
+            <UInput
+              v-else
+              v-model="nuevaCategoria"
+              class="mt-2"
+              placeholder="Nombre de la categoría nueva"
+              aria-label="Nombre de la categoría nueva"
+            />
+            <UButton
+              variant="link"
+              size="xs"
+              :icon="creandoCategoria ? undefined : 'i-heroicons-plus'"
+              class="mt-1"
+              @click="creandoCategoria = !creandoCategoria"
+            >
+              {{
+                creandoCategoria
+                  ? 'Usar una categoría existente'
+                  : 'Crear categoría nueva'
+              }}
+            </UButton>
             <USelect
               v-model="etapa"
               class="mt-2"
