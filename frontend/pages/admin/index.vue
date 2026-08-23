@@ -7,6 +7,7 @@ definePageMeta({ middleware: 'auth' })
 const auth = useAuthStore()
 const items = useItemsStore()
 const categorias = useCategoriasStore()
+const regalos = useRegalosStore()
 const router = useRouter()
 const toast = useToast()
 
@@ -39,6 +40,9 @@ onMounted(async () => {
     items.fetchAll(),
     items.fetchPendientes(),
     categorias.fetchAll(),
+    // Solo para el contador de "sin agradecer" del resumen: ese dato
+    // vive en la otra pantalla y es justo el más fácil de olvidar.
+    regalos.fetchAll(),
   ])
 })
 
@@ -229,14 +233,11 @@ function salir() {
 <template>
   <div class="space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <div class="flex items-center gap-3">
-        <h2 class="text-xl font-medium text-pink-800 dark:text-pink-200">
-          Catálogo
-        </h2>
-        <UBadge v-if="items.pendientes > 0" color="amber" variant="subtle">
-          {{ items.pendientes }} regalo{{ items.pendientes > 1 ? 's' : '' }} en camino
-        </UBadge>
-      </div>
+      <!-- Lo de "en camino" se movió al resumen, que es donde conviven
+           los números; acá quedaba suelto al lado del título. -->
+      <h2 class="text-xl font-medium text-pink-800 dark:text-pink-200">
+        Catálogo
+      </h2>
       <div class="flex items-center gap-2">
         <UButton icon="i-heroicons-gift" @click="modalRegistrar = true">
           Registrar regalo
@@ -271,6 +272,12 @@ function salir() {
         />
       </div>
     </div>
+
+    <ResumenCatalogo
+      :items="items.items"
+      :en-camino="items.pendientes"
+      :sin-agradecer="regalos.pendientesDeAgradecer"
+    />
 
     <UInput
       v-model="busqueda"
