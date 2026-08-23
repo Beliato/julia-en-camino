@@ -7,6 +7,7 @@ definePageMeta({ middleware: 'auth' })
 const auth = useAuthStore()
 const items = useItemsStore()
 const categorias = useCategoriasStore()
+const regalos = useRegalosStore()
 const router = useRouter()
 const toast = useToast()
 
@@ -39,6 +40,9 @@ onMounted(async () => {
     items.fetchAll(),
     items.fetchPendientes(),
     categorias.fetchAll(),
+    // Solo para el contador de "sin agradecer" del resumen: ese dato
+    // vive en la otra pantalla y es justo el más fácil de olvidar.
+    regalos.fetchAll(),
   ])
 })
 
@@ -108,6 +112,17 @@ const badge = {
 function editarItem(item: Item) {
   itemEditando.value = item
   modalForm.value = true
+}
+
+/** El resultado de búsqueda es una vista reducida del item; el editor
+ *  necesita el completo, que ya vino en el listado del catálogo. */
+function editarDesdeBusqueda(id: number) {
+  const item = items.items.find((i) => i.id === id)
+  if (!item) {
+    toast.add({ title: 'No pude abrir ese item', color: 'red' })
+    return
+  }
+  editarItem(item)
 }
 
 const subiendoFotoDe = ref<number | null>(null)
@@ -229,14 +244,11 @@ function salir() {
 <template>
   <div class="space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <div class="flex items-center gap-3">
-        <h2 class="text-xl font-medium text-pink-800 dark:text-pink-200">
-          Catálogo
-        </h2>
-        <UBadge v-if="items.pendientes > 0" color="amber" variant="subtle">
-          {{ items.pendientes }} regalo{{ items.pendientes > 1 ? 's' : '' }} en camino
-        </UBadge>
-      </div>
+      <!-- Lo de "en camino" se movió al resumen, que es donde conviven
+           los números; acá quedaba suelto al lado del título. -->
+      <h2 class="text-xl font-medium text-pink-800 dark:text-pink-200">
+        Catálogo
+      </h2>
       <div class="flex items-center gap-2">
         <UButton icon="i-heroicons-gift" @click="modalRegistrar = true">
           Registrar regalo
@@ -272,6 +284,12 @@ function salir() {
       </div>
     </div>
 
+    <ResumenCatalogo
+      :items="items.items"
+      :en-camino="items.pendientes"
+      :sin-agradecer="regalos.pendientesDeAgradecer"
+    />
+
     <UInput
       v-model="busqueda"
       icon="i-heroicons-magnifying-glass"
@@ -302,7 +320,32 @@ function salir() {
           :key="r.id"
           class="flex flex-wrap items-center justify-between gap-2 py-2"
         >
-          <span class="text-sm font-medium">{{ r.nombre }}</span>
+          <!-- Miniatura y nombre abren el editor: encontrar algo casi
+               siempre es el paso previo a corregirlo, y desde acá había
+               que salir a buscarlo de nuevo en la grilla. -->
+          <button
+            type="button"
+            class="group flex min-w-0 items-center gap-2 text-left"
+            :aria-label="`Editar ${r.nombre}`"
+            @click="editarDesdeBusqueda(r.id)"
+          >
+            <img
+              v-if="r.fotos.length > 0"
+              :src="r.fotos[0]!.url"
+              alt=""
+              class="h-10 w-10 shrink-0 rounded-md object-cover"
+            >
+            <!-- En un envoltorio y no con la clase suelta: FotoPlaceholder
+                 ya trae w-full, que competiría con un w-10 encima. -->
+            <div v-else class="h-10 w-10 shrink-0">
+              <FotoPlaceholder alto="h-10" />
+            </div>
+            <span
+              class="truncate text-sm font-medium group-hover:text-pink-700 dark:group-hover:text-pink-300"
+            >
+              {{ r.nombre }}
+            </span>
+          </button>
           <UBadge color="gray" variant="subtle">
             {{ ETAPA_LABEL[r.etapa] }}
           </UBadge>
