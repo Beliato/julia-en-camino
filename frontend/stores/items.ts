@@ -118,9 +118,9 @@ export const useItemsStore = defineStore('items', {
       await this.fetchPendientes()
       return item
     },
-    async buscar(q: string) {
+    async buscar(criterio: { q?: string; persona?: string }) {
       const api = useApi()
-      return await api<ItemBusqueda[]>('/items/buscar', { query: { q } })
+      return await api<ItemBusqueda[]>('/items/buscar', { query: criterio })
     },
     async asignarCaja(id: number, cajaId: number | null) {
       const api = useApi()
