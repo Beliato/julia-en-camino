@@ -10,6 +10,7 @@ interface DatosEvento {
   evento_fecha: string | null
   evento_hora: string | null
   evento_texto: string | null
+  evento_aviso: string | null
 }
 
 // Los datos llegan desde la página, que ya los pidió con el token: así
@@ -116,6 +117,16 @@ function volverAResponder() {
     </div>
 
     <div class="mx-auto mt-6 max-w-md">
+      <!-- Aviso configurable: la fecha límite para confirmar, o por dónde
+           más se puede avisar. Va afuera de las dos tarjetas para que se
+           vea igual antes y después de responder. -->
+      <p
+        v-if="evento.evento_aviso"
+        class="mb-3 text-center text-sm text-neutral-600 dark:text-neutral-400"
+      >
+        {{ evento.evento_aviso }}
+      </p>
+
       <!-- Ya respondió desde este navegador -->
       <UCard v-if="respuesta">
         <p class="text-sm text-neutral-600 dark:text-neutral-400">

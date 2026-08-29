@@ -163,3 +163,16 @@ class TestLinksSeparados:
 
     def test_un_token_de_invitacion_inventado_da_404(self, client):
         assert client.get("/i/no-existe").status_code == 404
+
+    def test_el_aviso_del_formulario_tambien_se_guarda(self, client, auth_headers, db):
+        client.patch(
+            "/config",
+            json={"evento_aviso": "Confirmá antes del 7 de noviembre"},
+            headers=auth_headers,
+        )
+        datos = client.get(f"/i/{_token(db)}").json()
+        assert datos["evento_aviso"] == "Confirmá antes del 7 de noviembre"
+
+    def test_el_aviso_no_viaja_en_la_config_publica(self, client, auth_headers):
+        client.patch("/config", json={"evento_aviso": "Secreto"}, headers=auth_headers)
+        assert "evento_aviso" not in client.get("/config").json()

@@ -37,3 +37,7 @@ class WishlistConfig(Base):
     evento_fecha: Mapped[str | None] = mapped_column(String(100), nullable=True)
     evento_hora: Mapped[str | None] = mapped_column(String(100), nullable=True)
     evento_texto: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # Aviso arriba del formulario: la fecha limite para confirmar, o por
+    # donde mas se puede avisar. Va aparte del texto de la lamina porque
+    # es una instruccion, no parte del dibujo.
+    evento_aviso: Mapped[str | None] = mapped_column(String(500), nullable=True)

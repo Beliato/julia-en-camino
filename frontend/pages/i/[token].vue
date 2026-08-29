@@ -20,6 +20,7 @@ interface InvitacionApi {
   evento_fecha: string | null
   evento_hora: string | null
   evento_texto: string | null
+  evento_aviso: string | null
 }
 
 const datos = ref<InvitacionApi | null>(null)

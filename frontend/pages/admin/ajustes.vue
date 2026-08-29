@@ -11,7 +11,7 @@ const nombre = ref('')
 const guardando = ref(false)
 const copiado = ref(false)
 
-const evento = reactive({ lugar: '', fecha: '', hora: '', texto: '' })
+const evento = reactive({ lugar: '', fecha: '', hora: '', texto: '', aviso: '' })
 const guardandoEvento = ref(false)
 
 const shareUrl = computed(() =>
@@ -40,11 +40,13 @@ onMounted(async () => {
     evento_fecha: string | null
     evento_hora: string | null
     evento_texto: string | null
+    evento_aviso: string | null
   }>(`/i/${data.invitacion_token}`, { baseURL: runtime.public.apiBase })
   evento.lugar = inv.evento_lugar ?? ''
   evento.fecha = inv.evento_fecha ?? ''
   evento.hora = inv.evento_hora ?? ''
   evento.texto = inv.evento_texto ?? ''
+  evento.aviso = inv.evento_aviso ?? ''
 })
 
 async function copiarLink() {
@@ -74,13 +76,14 @@ async function guardarNombre() {
 async function guardarEvento() {
   guardandoEvento.value = true
   try {
-    // Se mandan los cuatro siempre: vaciar un campo tiene que poder
-    // borrar ese renglón de la invitación.
+    // Se mandan todos siempre: vaciar un campo tiene que poder borrar
+    // ese renglón de la invitación.
     await config.guardar({
       evento_lugar: evento.lugar.trim(),
       evento_fecha: evento.fecha.trim(),
       evento_hora: evento.hora.trim(),
       evento_texto: evento.texto.trim(),
+      evento_aviso: evento.aviso.trim(),
     })
     toast.add({ title: 'Invitación actualizada', color: 'green' })
   } catch {
@@ -176,8 +179,8 @@ async function guardarEvento() {
       <template #header>
         <h3 class="font-medium">Datos del baby shower</h3>
         <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-          Se muestran en el centro de la invitación. Lo que dejes vacío no
-          aparece.
+          Los cuatro primeros van en el centro de la lámina; el aviso, arriba
+          del formulario. Lo que dejes vacío no aparece.
         </p>
       </template>
       <form class="space-y-3" @submit.prevent="guardarEvento">
@@ -196,6 +199,16 @@ async function guardarEvento() {
         </UFormGroup>
         <UFormGroup label="Lugar">
           <UInput v-model="evento.lugar" placeholder="Salón El Jardín, Av. Siempre Viva 123" />
+        </UFormGroup>
+        <UFormGroup
+          label="Aviso sobre la confirmación"
+          help="Se muestra encima del formulario, no sobre la lámina."
+        >
+          <UTextarea
+            v-model="evento.aviso"
+            :rows="2"
+            placeholder="Confirmá tu asistencia antes del 7 de noviembre, acá o con los papás de Julia"
+          />
         </UFormGroup>
         <div class="flex justify-end">
           <UButton type="submit" :loading="guardandoEvento">Guardar</UButton>
