@@ -58,7 +58,7 @@ def _get_config(db: Session) -> WishlistConfig:
 @router.get("/config", response_model=ConfigOut)
 @limiter.limit("30/minute")
 def obtener_config(request: Request, db: Session = Depends(get_db)):
-    return ConfigOut(nombre_app=_get_config(db).nombre_app)
+    return ConfigOut.model_validate(_get_config(db))
 
 
 @router.patch("/config", response_model=ConfigOut)
@@ -68,9 +68,16 @@ def actualizar_config(
     _: Admin = Depends(get_current_admin),
 ):
     config = _get_config(db)
-    config.nombre_app = body.nombre_app.strip()
+    for campo, valor in body.model_dump(exclude_unset=True).items():
+        if valor is None:
+            continue
+        limpio = valor.strip()
+        # Vacío borra el dato; en nombre_app no aplica porque el schema
+        # ya exige al menos un carácter.
+        setattr(config, campo, limpio or None)
     db.commit()
-    return ConfigOut(nombre_app=config.nombre_app)
+    db.refresh(config)
+    return ConfigOut.model_validate(config)
 
 
 # --- Link compartible (admin) ---

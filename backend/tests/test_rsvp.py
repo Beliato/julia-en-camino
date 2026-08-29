@@ -84,3 +84,48 @@ class TestConsultaDelAdmin:
 
     def test_borrar_algo_que_no_existe_da_404(self, client, auth_headers):
         assert client.delete("/rsvps/9999", headers=auth_headers).status_code == 404
+
+
+class TestDatosDelEvento:
+    def test_la_config_publica_los_devuelve(self, client, auth_headers):
+        client.patch(
+            "/config",
+            json={
+                "evento_lugar": "Salón El Jardín",
+                "evento_fecha": "Sábado 15 de noviembre",
+                "evento_hora": "De 4 a 7",
+                "evento_texto": "Acompañanos a celebrar",
+            },
+            headers=auth_headers,
+        )
+        datos = client.get("/config").json()
+        assert datos["evento_lugar"] == "Salón El Jardín"
+        assert datos["evento_fecha"] == "Sábado 15 de noviembre"
+
+    def test_se_puede_cambiar_solo_uno_sin_pisar_los_demas(self, client, auth_headers):
+        client.patch(
+            "/config",
+            json={"evento_lugar": "Casa", "evento_hora": "5 pm"},
+            headers=auth_headers,
+        )
+        client.patch("/config", json={"evento_hora": "6 pm"}, headers=auth_headers)
+
+        datos = client.get("/config").json()
+        assert datos["evento_lugar"] == "Casa"
+        assert datos["evento_hora"] == "6 pm"
+
+    def test_vaciar_un_campo_lo_borra(self, client, auth_headers):
+        client.patch("/config", json={"evento_hora": "5 pm"}, headers=auth_headers)
+        client.patch("/config", json={"evento_hora": ""}, headers=auth_headers)
+
+        assert client.get("/config").json()["evento_hora"] is None
+
+    def test_el_nombre_de_la_app_sigue_andando(self, client, auth_headers):
+        r = client.patch(
+            "/config", json={"nombre_app": "Otro nombre"}, headers=auth_headers
+        )
+        assert r.json()["nombre_app"] == "Otro nombre"
+
+    def test_sin_sesion_no_se_puede_cambiar(self, client):
+        r = client.patch("/config", json={"evento_lugar": "Colado"})
+        assert r.status_code in (401, 403)

@@ -9,6 +9,8 @@ const props = defineProps<{ token: string }>()
 
 const runtime = useRuntimeConfig()
 const toast = useToast()
+const config = useConfigStore()
+const { hayDatosDelEvento } = storeToRefs(config)
 const { respuesta, cargar, guardar, olvidar } = useRsvpLocal()
 
 const LAMINA = '/invitacion-julia.webp'
@@ -18,7 +20,10 @@ const asistira = ref<'SI' | 'NO'>('SI')
 const enviando = ref(false)
 const laminaOk = ref(true)
 
-onMounted(cargar)
+onMounted(() => {
+  cargar()
+  config.fetch()
+})
 
 const puedeEnviar = computed(() => !!nombre.value.trim())
 
@@ -57,13 +62,45 @@ function volverAResponder() {
 
 <template>
   <section class="mt-12">
-    <img
-      v-if="laminaOk"
-      :src="LAMINA"
-      alt="Invitación al baby shower de Julia"
-      class="mx-auto w-full max-w-md rounded-xl shadow-sm"
-      @error="laminaOk = false"
-    >
+    <!-- Los datos van encima de la lámina, en su franja central vacía, y
+         no quemados en la imagen: si cambia la hora se edita desde
+         Ajustes en vez de volver a exportar desde Illustrator.
+         El bloque se posiciona en porcentajes para acompañar el escalado
+         de la imagen en cualquier ancho. -->
+    <div v-if="laminaOk" class="relative mx-auto w-full max-w-md">
+      <img
+        :src="LAMINA"
+        alt="Invitación al baby shower de Julia"
+        class="w-full rounded-xl shadow-sm"
+        @error="laminaOk = false"
+      >
+      <div
+        v-if="hayDatosDelEvento"
+        class="absolute inset-x-[12%] top-[38%] text-center text-[#4A240E]"
+      >
+        <p
+          v-if="config.eventoTexto"
+          class="text-[2.6vw] leading-snug sm:text-xs"
+        >
+          {{ config.eventoTexto }}
+        </p>
+        <p
+          v-if="config.eventoFecha"
+          class="mt-[3%] font-serif text-[4vw] italic sm:text-lg"
+        >
+          {{ config.eventoFecha }}
+        </p>
+        <p v-if="config.eventoHora" class="text-[3vw] sm:text-sm">
+          {{ config.eventoHora }}
+        </p>
+        <p
+          v-if="config.eventoLugar"
+          class="mt-[3%] text-[3vw] font-medium sm:text-sm"
+        >
+          {{ config.eventoLugar }}
+        </p>
+      </div>
+    </div>
 
     <div class="mx-auto mt-6 max-w-md">
       <!-- Ya respondió desde este navegador -->

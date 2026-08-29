@@ -20,3 +20,13 @@ class WishlistConfig(Base):
         String(36), unique=True, default=_nuevo_share_token
     )
     nombre_app: Mapped[str] = mapped_column(String(100), default=NOMBRE_APP_DEFAULT)
+
+    # Datos del baby shower, para el centro de la invitación. Van como
+    # texto libre y no como fecha y hora reales: se escriben una vez y se
+    # leen tal cual («Sábado 15 de noviembre», «de 4 a 7 de la tarde»),
+    # así que tipar esto solo agregaría problemas de formato y zona
+    # horaria sin ganar nada.
+    evento_lugar: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    evento_fecha: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    evento_hora: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    evento_texto: Mapped[str | None] = mapped_column(String(500), nullable=True)

@@ -9,6 +9,9 @@ const nombre = ref('')
 const guardando = ref(false)
 const copiado = ref(false)
 
+const evento = reactive({ lugar: '', fecha: '', hora: '', texto: '' })
+const guardandoEvento = ref(false)
+
 const shareUrl = computed(() =>
   shareToken.value ? `${location.origin}/w/${shareToken.value}` : '',
 )
@@ -16,6 +19,10 @@ const shareUrl = computed(() =>
 onMounted(async () => {
   await config.fetch()
   nombre.value = config.nombreApp
+  evento.lugar = config.eventoLugar
+  evento.fecha = config.eventoFecha
+  evento.hora = config.eventoHora
+  evento.texto = config.eventoTexto
   const api = useApi()
   const data = await api<{ share_token: string }>('/wishlist/link')
   shareToken.value = data.share_token
@@ -30,17 +37,31 @@ async function copiarLink() {
 async function guardarNombre() {
   guardando.value = true
   try {
-    const api = useApi()
-    const data = await api<{ nombre_app: string }>('/config', {
-      method: 'PATCH',
-      body: { nombre_app: nombre.value.trim() },
-    })
-    config.setNombre(data.nombre_app)
+    await config.guardar({ nombre_app: nombre.value.trim() })
     toast.add({ title: 'Nombre actualizado', color: 'green' })
   } catch {
     toast.add({ title: 'No se pudo actualizar el nombre', color: 'red' })
   } finally {
     guardando.value = false
+  }
+}
+
+async function guardarEvento() {
+  guardandoEvento.value = true
+  try {
+    // Se mandan los cuatro siempre: vaciar un campo tiene que poder
+    // borrar ese renglón de la invitación.
+    await config.guardar({
+      evento_lugar: evento.lugar.trim(),
+      evento_fecha: evento.fecha.trim(),
+      evento_hora: evento.hora.trim(),
+      evento_texto: evento.texto.trim(),
+    })
+    toast.add({ title: 'Invitación actualizada', color: 'green' })
+  } catch {
+    toast.add({ title: 'No se pudo guardar', color: 'red' })
+  } finally {
+    guardandoEvento.value = false
   }
 }
 </script>
@@ -93,6 +114,37 @@ async function guardarNombre() {
       <form class="flex gap-2" @submit.prevent="guardarNombre">
         <UInput v-model="nombre" required class="flex-1" aria-label="Nombre de la app" />
         <UButton type="submit" :loading="guardando">Guardar</UButton>
+      </form>
+    </UCard>
+
+    <UCard>
+      <template #header>
+        <h3 class="font-medium">Datos del baby shower</h3>
+        <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+          Se muestran en el centro de la invitación. Lo que dejes vacío no
+          aparece.
+        </p>
+      </template>
+      <form class="space-y-3" @submit.prevent="guardarEvento">
+        <UFormGroup label="Texto de invitación">
+          <UTextarea
+            v-model="evento.texto"
+            :rows="2"
+            placeholder="Acompañanos a celebrar la llegada de Julia"
+          />
+        </UFormGroup>
+        <UFormGroup label="Fecha">
+          <UInput v-model="evento.fecha" placeholder="Sábado 15 de noviembre" />
+        </UFormGroup>
+        <UFormGroup label="Hora">
+          <UInput v-model="evento.hora" placeholder="De 4 a 7 de la tarde" />
+        </UFormGroup>
+        <UFormGroup label="Lugar">
+          <UInput v-model="evento.lugar" placeholder="Salón El Jardín, Av. Siempre Viva 123" />
+        </UFormGroup>
+        <div class="flex justify-end">
+          <UButton type="submit" :loading="guardandoEvento">Guardar</UButton>
+        </div>
       </form>
     </UCard>
   </div>
