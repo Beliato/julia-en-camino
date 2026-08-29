@@ -33,16 +33,11 @@ const logoOk = ref(true)
           class="h-9 w-9 shrink-0"
           aria-hidden="true"
         >
-        <div class="min-w-0">
-          <h1
-            class="truncate font-serif text-xl italic text-pink-800 dark:text-pink-200"
-          >
-            {{ config.nombreApp }}
-          </h1>
-          <p class="text-xs text-neutral-500 dark:text-neutral-400">
-            Florece donde estás plantada
-          </p>
-        </div>
+        <h1
+          class="min-w-0 truncate font-serif text-xl italic text-pink-800 dark:text-pink-200"
+        >
+          {{ config.nombreApp }}
+        </h1>
         <slot name="header-extra" />
       </div>
     </header>

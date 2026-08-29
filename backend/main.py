@@ -11,6 +11,7 @@ from app.routers import (
     cajas,
     categorias,
     fotos,
+    invitaciones,
     items,
     regalos,
     rsvp,
@@ -64,6 +65,7 @@ app.include_router(cajas.items_router)
 app.include_router(categorias.router)
 app.include_router(fotos.router)
 app.include_router(regalos.router)
+app.include_router(invitaciones.router)
 app.include_router(rsvp.router)
 app.include_router(wishlist.router)
 

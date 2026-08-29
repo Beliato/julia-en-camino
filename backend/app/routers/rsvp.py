@@ -12,27 +12,23 @@ from app.core.database import get_db
 from app.core.deps import get_current_admin
 from app.core.ratelimit import limiter
 from app.models.admin import Admin
+from app.models.invitacion import Invitacion
 from app.models.rsvp import Rsvp
-from app.models.wishlist_config import WishlistConfig
 from app.schemas.rsvp import ResumenRsvp, RsvpCreate, RsvpOut
 
 router = APIRouter(tags=["rsvp"])
 
 
-def _validar_token(invitacion_token: str, db: Session) -> None:
+def _get_invitacion(token: str, db: Session) -> Invitacion:
     """Contra el token de la invitación, no el de la wishlist.
 
     Son links distintos a propósito: confirmar asistencia se hace desde
-    la invitación, que se manda a todos, y no desde la lista de regalos,
-    que se pasa solo a quien pregunta.
+    la invitación, que se manda a los convidados de ese evento.
     """
-    config = (
-        db.query(WishlistConfig)
-        .filter(WishlistConfig.invitacion_token == invitacion_token)
-        .first()
-    )
-    if not config:
+    inv = db.query(Invitacion).filter(Invitacion.token == token).first()
+    if not inv:
         raise HTTPException(status_code=404, detail="Link no válido")
+    return inv
 
 
 @router.post(
@@ -47,8 +43,13 @@ def responder(
     body: RsvpCreate,
     db: Session = Depends(get_db),
 ):
-    _validar_token(invitacion_token, db)
-    rsvp = Rsvp(nombre=body.nombre, asistira=body.asistira)
+    inv = _get_invitacion(invitacion_token, db)
+    rsvp = Rsvp(
+        invitacion_id=inv.id,
+        nombre=body.nombre,
+        asistira=body.asistira,
+        comentario=body.comentario,
+    )
     db.add(rsvp)
     db.commit()
     db.refresh(rsvp)

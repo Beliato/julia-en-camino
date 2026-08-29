@@ -16,7 +16,6 @@ from app.models.wishlist_config import WishlistConfig
 from app.schemas.wishlist import (
     ConfigOut,
     ConfigUpdate,
-    InvitacionOut,
     ItemPublicoOut,
     RegaloPublicoOut,
     ReservaPendienteOut,
@@ -81,22 +80,6 @@ def actualizar_config(
     return ConfigOut.model_validate(config)
 
 
-@router.get("/i/{invitacion_token}", response_model=InvitacionOut)
-@limiter.limit("30/minute")
-def obtener_invitacion(
-    request: Request, invitacion_token: str, db: Session = Depends(get_db)
-):
-    """La invitación al baby shower, contra su propio token."""
-    config = (
-        db.query(WishlistConfig)
-        .filter(WishlistConfig.invitacion_token == invitacion_token)
-        .first()
-    )
-    if not config:
-        raise HTTPException(status_code=404, detail="Link no válido")
-    return InvitacionOut.model_validate(config)
-
-
 # --- Link compartible (admin) ---
 
 
@@ -105,11 +88,7 @@ def obtener_link(
     db: Session = Depends(get_db),
     _: Admin = Depends(get_current_admin),
 ):
-    config = _get_config(db)
-    return WishlistLinkOut(
-        share_token=config.share_token,
-        invitacion_token=config.invitacion_token,
-    )
+    return WishlistLinkOut(share_token=_get_config(db).share_token)
 
 
 # --- Contador de actividad (admin, sin nombres) ---

@@ -8,13 +8,32 @@ Hizo falta.
 
 ## Qué se construye
 
-1. **Una página propia para la invitación**, con su propio link, donde
-   la lámina y el formulario son lo único que hay.
-2. **Una pantalla en el admin** para ir viendo quiénes confirmaron.
+1. **Invitaciones como entidad**: varias, cada una con su link, su
+   lámina, sus datos y sus confirmados.
+2. **Una página propia para cada invitación**, donde la lámina y el
+   formulario son lo único que hay.
+3. **Una pantalla en el admin** para crearlas y ver quién respondió.
 
 ## Decisiones
 
-1. **Dos links independientes.** La wishlist se pasa solo a quien
+1. **Cada invitación es una fila, no un campo de la config.** Nació
+   como un token y cinco campos colgados de `wishlist_config`, o sea que
+   estructuralmente solo podía existir una. Hicieron falta varias tandas
+   del mismo baby shower, cada una con su fecha y su lista, así que pasó
+   a tabla propia. Los `rsvps` cuelgan de la invitación: mezclar las
+   confirmaciones de dos eventos haría inservible el conteo.
+
+   La migración mueve el token y los datos existentes a la primera fila
+   en vez de arrancar de cero, porque el link ya podía estar compartido.
+
+2. **La lámina es opcional por invitación.** Si no se sube una, se usa
+   la que viene con la app: sirve para el caso más común, varias tandas
+   del mismo evento. Para un evento distinto, cada una carga la suya.
+
+3. **El título es interno.** Sirve para distinguirlas en el admin y
+   nunca viaja al link público.
+
+4. **Dos links independientes.** La wishlist se pasa solo a quien
    pregunta qué hace falta; la invitación se manda a todos los
    convidados. Con un token compartido, invitar a alguien al shower
    sería mostrarle también la lista de regalos, que no es lo que se
@@ -25,23 +44,23 @@ Hizo falta.
    es público y sin token, y se sirven solo contra `GET /i/{token}`: el
    lugar y la hora no tienen por qué ser consultables sin el link.
 
-2. **Sin identidad, igual que las reservas.** Nadie crea cuenta. El
+5. **Sin identidad, igual que las reservas.** Nadie crea cuenta. El
    envío va con el mismo límite de 10 por minuto que las reservas.
 
-3. **Se acepta que alguien responda dos veces.** El navegador recuerda
+6. **Se acepta que alguien responda dos veces.** El navegador recuerda
    la respuesta en localStorage y muestra lo elegido con opción a
    cambiarlo, pero eso no es un control: basta otro teléfono. Deduplicar
    por nombre obligaría a adivinar si «Ana» y «Ana Pérez» son la misma
    persona, y equivocarse ahí borra la respuesta de alguien. Se prefiere
    que el admin pueda borrar duplicados a mano.
 
-4. **La lámina se rasteriza.** El SVG que llegó de Illustrator pesa
+7. **La lámina que viene con la app se rasteriza.** El SVG que llegó de Illustrator pesa
    12,4 MB, y optimizado con svgo sigue en 6,4 MB — inviable para una
    página que se abre desde el celular con datos. Rasterizado a WebP de
    1000px queda en 86 KB, unas 140 veces menos, y a la vista es el mismo
    dibujo.
 
-5. **Lugar, fecha, hora y texto van encima de la lámina, no quemados en
+8. **Lugar, fecha, hora y texto van encima de la lámina, no quemados en
    ella.** El centro del dibujo está vacío a propósito. Se guardan en
    `wishlist_config` y se editan desde Ajustes, así cambiar la hora no
    obliga a reexportar desde Illustrator. Son texto libre y no fecha y
@@ -49,14 +68,14 @@ Hizo falta.
    noviembre», «de 4 a 7 de la tarde»), así que tipar solo agregaría
    problemas de formato y zona horaria sin ganar nada.
 
-6. **El aviso sobre la confirmación va aparte del texto de la lámina.**
+9. **El aviso sobre la confirmación va aparte del texto de la lámina.**
    Es una instrucción («confirmá antes del 7 de noviembre, acá o con los
    papás»), no parte del dibujo, así que se muestra encima del
    formulario y no sobre la imagen. Se ve igual antes y después de
    responder: la fecha límite sigue importando si alguien quiere
    cambiar lo que contestó.
 
-7. **La respuesta se puede borrar pero no editar desde el admin.** Un
+10. **La respuesta se puede borrar pero no editar desde el admin.** Un
    nombre mal escrito lo escribió quien respondió; corregirlo por ellos
    invita a inventar. Borrar y que vuelva a confirmar es más honesto.
 
@@ -64,10 +83,13 @@ Hizo falta.
 
 - **Cuántos acompañantes trae cada uno.** No se pidió. Si hace falta
   para calcular comida, se agrega después con un campo numérico.
+- **Reusar una invitación como plantilla de otra.** Con dos o tres
+  eventos, copiar los campos a mano cuesta menos que la pantalla que
+  haría falta.
 - **Un recordatorio o aviso a quien no respondió.** Implicaría guardar
   contactos, que hoy no se piden.
 
 ## Pendiente
 
-Cargar los datos del evento desde Ajustes antes de mandar el link. Sin
-ellos la invitación se muestra sin fecha ni lugar.
+Cargar los datos de cada invitación antes de mandar su link. Sin ellos
+se muestra sin fecha ni lugar.

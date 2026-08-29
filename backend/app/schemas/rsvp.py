@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field, field_validator
 class RsvpCreate(BaseModel):
     nombre: str = Field(min_length=1, max_length=255)
     asistira: bool
+    # Mensaje para Julia, para leerle después.
+    comentario: str | None = Field(default=None, max_length=2000)
 
     @field_validator("nombre")
     @classmethod
@@ -15,11 +17,18 @@ class RsvpCreate(BaseModel):
             raise ValueError("Hace falta un nombre")
         return limpio
 
+    @field_validator("comentario")
+    @classmethod
+    def comentario_vacio_es_nada(cls, v: str | None) -> str | None:
+        return (v or "").strip() or None
+
 
 class RsvpOut(BaseModel):
     id: int
+    invitacion_id: int
     nombre: str
     asistira: bool
+    comentario: str | None = None
     created_at: datetime
 
     class Config:
