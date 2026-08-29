@@ -116,7 +116,7 @@ async function quitarImagen() {
           <UTextarea
             v-model="f.aviso"
             :rows="2"
-            placeholder="Confirmá antes del 7 de noviembre, acá o con los papás de Julia"
+            placeholder="Confirmá tu asistencia antes del 7 de noviembre, en el siguiente formulario o con los papás de Julia por WhatsApp"
           />
         </UFormGroup>
 
