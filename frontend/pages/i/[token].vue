@@ -16,11 +16,12 @@ const logoOk = ref(true)
 
 interface InvitacionApi {
   nombre_app: string
-  evento_lugar: string | null
-  evento_fecha: string | null
-  evento_hora: string | null
-  evento_texto: string | null
-  evento_aviso: string | null
+  lugar: string | null
+  fecha: string | null
+  hora: string | null
+  texto: string | null
+  aviso: string | null
+  imagen_url: string | null
 }
 
 const datos = ref<InvitacionApi | null>(null)

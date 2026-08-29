@@ -2,8 +2,10 @@ import { defineStore } from 'pinia'
 
 export interface Rsvp {
   id: number
+  invitacion_id: number
   nombre: string
   asistira: boolean
+  comentario: string | null
   created_at: string
 }
 

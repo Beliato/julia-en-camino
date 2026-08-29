@@ -18,20 +18,6 @@ class ConfigOut(BaseModel):
         from_attributes = True
 
 
-class InvitacionOut(BaseModel):
-    """La invitación, contra su propio token."""
-
-    nombre_app: str
-    evento_lugar: str | None = None
-    evento_fecha: str | None = None
-    evento_hora: str | None = None
-    evento_texto: str | None = None
-    evento_aviso: str | None = None
-
-    class Config:
-        from_attributes = True
-
-
 class ConfigUpdate(BaseModel):
     """Los campos del evento son opcionales: mandar solo los que cambian.
 
@@ -40,16 +26,10 @@ class ConfigUpdate(BaseModel):
     """
 
     nombre_app: str | None = Field(default=None, min_length=1, max_length=100)
-    evento_lugar: str | None = Field(default=None, max_length=255)
-    evento_fecha: str | None = Field(default=None, max_length=100)
-    evento_hora: str | None = Field(default=None, max_length=100)
-    evento_texto: str | None = Field(default=None, max_length=500)
-    evento_aviso: str | None = Field(default=None, max_length=500)
 
 
 class WishlistLinkOut(BaseModel):
     share_token: str
-    invitacion_token: str
 
 
 class ItemPublicoOut(BaseModel):

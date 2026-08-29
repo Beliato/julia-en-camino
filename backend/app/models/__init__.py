@@ -1,6 +1,7 @@
 from app.models.admin import Admin
 from app.models.caja import CajaAlmacenamiento
 from app.models.categoria import Categoria
+from app.models.invitacion import Invitacion
 from app.models.item import (
     EstadoItem,
     Etapa,
@@ -29,6 +30,7 @@ __all__ = [
     "Prioridad",
     "RangoPrecio",
     "Regalo",
+    "Invitacion",
     "Reserva",
     "Rsvp",
     "WishlistConfig",

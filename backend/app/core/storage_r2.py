@@ -22,9 +22,12 @@ CONTENT_TYPES_PERMITIDOS = {
 }
 MAX_BYTES = 5 * 1024 * 1024  # 5 MB
 
-# Dos colecciones: las fotos de referencia del catálogo (items/) y las
-# fotos de Julia usando cada regalo (regalos/).
-_KEY_RE = re.compile(r"^(items|regalos)/(\d+)/[0-9a-f-]{36}\.(jpg|png|webp)$")
+# Tres colecciones: fotos de referencia del catálogo (items/), fotos de
+# Julia usando cada regalo (regalos/) y las láminas de invitación
+# (invitaciones/).
+_KEY_RE = re.compile(
+    r"^(items|regalos|invitaciones)/(\d+)/[0-9a-f-]{36}\.(jpg|png|webp)$"
+)
 
 
 def esta_configurado() -> bool:

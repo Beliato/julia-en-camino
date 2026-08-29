@@ -1,46 +1,63 @@
-/** Recuerda que este navegador ya respondió la invitación.
+/** Recuerda la respuesta hecha desde este navegador, por invitación.
  *
- * Igual que con las reservas, quien entra no tiene cuenta: lo único que
- * evita que conteste dos veces sin darse cuenta es acordarse acá. No es
- * un control de verdad —basta con otro teléfono— y no pretende serlo:
- * el admin puede borrar duplicados.
+ * Guarda además el `token_edicion` que devuelve la API: es la única
+ * credencial para cambiar esa respuesta en vez de crear otra. Sin él,
+ * cambiar de opinión dejaba viva la respuesta vieja y sumaba una nueva.
+ *
+ * Se guarda por invitación porque alguien puede estar invitado a más de
+ * un evento y responder distinto en cada uno.
  */
 
 const STORAGE_KEY = 'julia_rsvp'
 
 export interface RsvpLocal {
+  token: string
   nombre: string
   asistira: boolean
+  comentario: string
 }
 
-function leer(): RsvpLocal | null {
-  if (!import.meta.client) return null
+type PorInvitacion = Record<string, RsvpLocal>
+
+function leer(): PorInvitacion {
+  if (!import.meta.client) return {}
   try {
-    const crudo = localStorage.getItem(STORAGE_KEY)
-    return crudo ? (JSON.parse(crudo) as RsvpLocal) : null
+    const crudo = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
+    // El formato original guardaba una sola respuesta suelta, sin token
+    // ni invitación. No se puede saber a cuál pertenecía ni editarla, así
+    // que se descarta: quien esté en ese caso vuelve a ver el formulario.
+    if (crudo && typeof crudo === 'object' && 'nombre' in crudo) return {}
+    return crudo as PorInvitacion
   } catch {
-    return null
+    return {}
   }
 }
 
 export function useRsvpLocal() {
-  const respuesta = useState<RsvpLocal | null>('rsvp-local', () => null)
+  const respuestas = useState<PorInvitacion>('rsvp-local', () => ({}))
 
-  function cargar() {
-    respuesta.value = leer()
-  }
-
-  function guardar(valor: RsvpLocal) {
-    respuesta.value = valor
+  function persistir(valor: PorInvitacion) {
+    respuestas.value = valor
     if (import.meta.client) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(valor))
     }
   }
 
-  function olvidar() {
-    respuesta.value = null
-    if (import.meta.client) localStorage.removeItem(STORAGE_KEY)
+  function cargar() {
+    respuestas.value = leer()
   }
 
-  return { respuesta, cargar, guardar, olvidar }
+  function guardar(invitacion: string, valor: RsvpLocal) {
+    persistir({ ...respuestas.value, [invitacion]: valor })
+  }
+
+  function olvidar(invitacion: string) {
+    persistir(
+      Object.fromEntries(
+        Object.entries(respuestas.value).filter(([k]) => k !== invitacion),
+      ),
+    )
+  }
+
+  return { respuestas, cargar, guardar, olvidar }
 }

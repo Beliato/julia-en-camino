@@ -1,5 +1,6 @@
 """Confirmacion de asistencia al baby shower."""
 
+from app.models.invitacion import Invitacion
 from app.models.rsvp import Rsvp
 from app.models.wishlist_config import WishlistConfig
 
@@ -14,9 +15,19 @@ def _config(db) -> WishlistConfig:
     return config
 
 
+def _invitacion(db, titulo: str = "Baby shower") -> Invitacion:
+    inv = db.query(Invitacion).filter(Invitacion.titulo == titulo).first()
+    if not inv:
+        inv = Invitacion(titulo=titulo)
+        db.add(inv)
+        db.commit()
+        db.refresh(inv)
+    return inv
+
+
 def _token(db) -> str:
     """El token de la invitacion, que es con el que se confirma."""
-    return _config(db).invitacion_token
+    return _invitacion(db).token
 
 
 class TestResponder:
@@ -59,9 +70,9 @@ class TestResponder:
 
 class TestConsultaDelAdmin:
     def test_lista_con_los_totales(self, client, auth_headers, db):
-        db.add(Rsvp(nombre="Ana", asistira=True))
-        db.add(Rsvp(nombre="Beto", asistira=True))
-        db.add(Rsvp(nombre="Caro", asistira=False))
+        db.add(Rsvp(invitacion_id=_invitacion(db).id, nombre="Ana", asistira=True))
+        db.add(Rsvp(invitacion_id=_invitacion(db).id, nombre="Beto", asistira=True))
+        db.add(Rsvp(invitacion_id=_invitacion(db).id, nombre="Caro", asistira=False))
         db.commit()
 
         r = client.get("/rsvps", headers=auth_headers)
@@ -71,7 +82,7 @@ class TestConsultaDelAdmin:
         assert len(r.json()["respuestas"]) == 3
 
     def test_sin_sesion_no_se_puede_ver_quien_viene(self, client, db):
-        db.add(Rsvp(nombre="Ana", asistira=True))
+        db.add(Rsvp(invitacion_id=_invitacion(db).id, nombre="Ana", asistira=True))
         db.commit()
 
         r = client.get("/rsvps")
@@ -80,7 +91,7 @@ class TestConsultaDelAdmin:
     def test_se_puede_borrar_una_respuesta_cargada_por_error(
         self, client, auth_headers, db
     ):
-        rsvp = Rsvp(nombre="Duplicada", asistira=True)
+        rsvp = Rsvp(invitacion_id=_invitacion(db).id, nombre="Duplicada", asistira=True)
         db.add(rsvp)
         db.commit()
 
@@ -93,50 +104,44 @@ class TestConsultaDelAdmin:
 
 
 class TestDatosDelEvento:
-    def test_la_config_publica_los_devuelve(self, client, auth_headers, db):
+    def test_la_invitacion_devuelve_sus_datos(self, client, auth_headers, db):
+        inv = _invitacion(db)
         client.patch(
-            "/config",
-            json={
-                "evento_lugar": "Salón El Jardín",
-                "evento_fecha": "Sábado 15 de noviembre",
-                "evento_hora": "De 4 a 7",
-                "evento_texto": "Acompañanos a celebrar",
-            },
+            f"/invitaciones/{inv.id}",
+            json={"lugar": "Salón El Jardín", "fecha": "Sábado 15"},
             headers=auth_headers,
         )
-        datos = client.get(f"/i/{_token(db)}").json()
-        assert datos["evento_lugar"] == "Salón El Jardín"
-        assert datos["evento_fecha"] == "Sábado 15 de noviembre"
+        datos = client.get(f"/i/{inv.token}").json()
+        assert datos["lugar"] == "Salón El Jardín"
+        assert datos["fecha"] == "Sábado 15"
 
     def test_se_puede_cambiar_solo_uno_sin_pisar_los_demas(
         self, client, auth_headers, db
     ):
+        inv = _invitacion(db)
         client.patch(
-            "/config",
-            json={"evento_lugar": "Casa", "evento_hora": "5 pm"},
+            f"/invitaciones/{inv.id}",
+            json={"lugar": "Casa", "hora": "5 pm"},
             headers=auth_headers,
         )
-        client.patch("/config", json={"evento_hora": "6 pm"}, headers=auth_headers)
-
-        datos = client.get(f"/i/{_token(db)}").json()
-        assert datos["evento_lugar"] == "Casa"
-        assert datos["evento_hora"] == "6 pm"
+        client.patch(
+            f"/invitaciones/{inv.id}", json={"hora": "6 pm"}, headers=auth_headers
+        )
+        datos = client.get(f"/i/{inv.token}").json()
+        assert datos["lugar"] == "Casa"
+        assert datos["hora"] == "6 pm"
 
     def test_vaciar_un_campo_lo_borra(self, client, auth_headers, db):
-        client.patch("/config", json={"evento_hora": "5 pm"}, headers=auth_headers)
-        client.patch("/config", json={"evento_hora": ""}, headers=auth_headers)
-
-        assert client.get(f"/i/{_token(db)}").json()["evento_hora"] is None
-
-    def test_el_nombre_de_la_app_sigue_andando(self, client, auth_headers):
-        r = client.patch(
-            "/config", json={"nombre_app": "Otro nombre"}, headers=auth_headers
+        inv = _invitacion(db)
+        client.patch(
+            f"/invitaciones/{inv.id}", json={"hora": "5 pm"}, headers=auth_headers
         )
-        assert r.json()["nombre_app"] == "Otro nombre"
+        client.patch(f"/invitaciones/{inv.id}", json={"hora": ""}, headers=auth_headers)
+        assert client.get(f"/i/{inv.token}").json()["hora"] is None
 
-    def test_sin_sesion_no_se_puede_cambiar(self, client):
-        r = client.patch("/config", json={"evento_lugar": "Colado"})
-        assert r.status_code in (401, 403)
+    def test_el_titulo_no_se_muestra_a_quien_recibe_el_link(self, client, db):
+        inv = _invitacion(db, "Interno: tanda de la familia")
+        assert "titulo" not in client.get(f"/i/{inv.token}").json()
 
 
 class TestLinksSeparados:
@@ -149,30 +154,153 @@ class TestLinksSeparados:
         assert r.status_code == 404
 
     def test_el_token_de_la_invitacion_no_abre_la_wishlist(self, client, db):
-        config = _config(db)
-        assert client.get(f"/w/{config.invitacion_token}").status_code == 404
-
-    def test_son_tokens_distintos(self, db):
-        config = _config(db)
-        assert config.share_token != config.invitacion_token
-
-    def test_el_admin_ve_los_dos_links(self, client, auth_headers):
-        datos = client.get("/wishlist/link", headers=auth_headers).json()
-        assert datos["share_token"] and datos["invitacion_token"]
-        assert datos["share_token"] != datos["invitacion_token"]
+        assert client.get(f"/w/{_token(db)}").status_code == 404
 
     def test_un_token_de_invitacion_inventado_da_404(self, client):
         assert client.get("/i/no-existe").status_code == 404
 
-    def test_el_aviso_del_formulario_tambien_se_guarda(self, client, auth_headers, db):
-        client.patch(
-            "/config",
-            json={"evento_aviso": "Confirmá antes del 7 de noviembre"},
-            headers=auth_headers,
-        )
-        datos = client.get(f"/i/{_token(db)}").json()
-        assert datos["evento_aviso"] == "Confirmá antes del 7 de noviembre"
 
-    def test_el_aviso_no_viaja_en_la_config_publica(self, client, auth_headers):
-        client.patch("/config", json={"evento_aviso": "Secreto"}, headers=auth_headers)
-        assert "evento_aviso" not in client.get("/config").json()
+class TestVariasInvitaciones:
+    def test_cada_una_tiene_su_propio_link(self, client, auth_headers):
+        a = client.post(
+            "/invitaciones", json={"titulo": "Tanda familia"}, headers=auth_headers
+        ).json()
+        b = client.post(
+            "/invitaciones", json={"titulo": "Tanda amigas"}, headers=auth_headers
+        ).json()
+        assert a["token"] != b["token"]
+
+    def test_las_confirmaciones_no_se_mezclan(self, client, auth_headers, db):
+        a = client.post(
+            "/invitaciones", json={"titulo": "Familia"}, headers=auth_headers
+        ).json()
+        b = client.post(
+            "/invitaciones", json={"titulo": "Amigas"}, headers=auth_headers
+        ).json()
+
+        client.post(
+            f"/i/{a['token']}/rsvp", json={"nombre": "Tia Ana", "asistira": True}
+        )
+        client.post(f"/i/{b['token']}/rsvp", json={"nombre": "Sofia", "asistira": True})
+        client.post(
+            f"/i/{b['token']}/rsvp", json={"nombre": "Marta", "asistira": False}
+        )
+
+        por_id = {
+            i["id"]: i for i in client.get("/invitaciones", headers=auth_headers).json()
+        }
+        assert por_id[a["id"]]["asisten"] == 1
+        assert por_id[b["id"]]["asisten"] == 1
+        assert por_id[b["id"]]["no_asisten"] == 1
+
+    def test_borrar_una_se_lleva_sus_confirmaciones(self, client, auth_headers, db):
+        inv = client.post(
+            "/invitaciones", json={"titulo": "Se borra"}, headers=auth_headers
+        ).json()
+        client.post(
+            f"/i/{inv['token']}/rsvp", json={"nombre": "Alguien", "asistira": True}
+        )
+
+        assert (
+            client.delete(
+                f"/invitaciones/{inv['id']}", headers=auth_headers
+            ).status_code
+            == 204
+        )
+        assert db.query(Rsvp).filter(Rsvp.invitacion_id == inv["id"]).count() == 0
+
+    def test_sin_sesion_no_se_pueden_listar(self, client):
+        assert client.get("/invitaciones").status_code in (401, 403)
+
+    def test_el_titulo_es_obligatorio(self, client, auth_headers):
+        r = client.post("/invitaciones", json={"titulo": "  "}, headers=auth_headers)
+        assert r.status_code == 422
+
+
+class TestComentarioParaJulia:
+    def test_se_guarda_el_comentario(self, client, db):
+        r = client.post(
+            f"/i/{_token(db)}/rsvp",
+            json={
+                "nombre": "Hannia",
+                "asistira": True,
+                "comentario": "Te esperamos con muchas ganas, Julia",
+            },
+        )
+        assert r.status_code == 201
+        assert r.json()["comentario"] == "Te esperamos con muchas ganas, Julia"
+
+    def test_es_opcional(self, client, db):
+        r = client.post(
+            f"/i/{_token(db)}/rsvp", json={"nombre": "Sin mensaje", "asistira": True}
+        )
+        assert r.status_code == 201
+        assert r.json()["comentario"] is None
+
+    def test_un_comentario_en_blanco_no_se_guarda(self, client, db):
+        r = client.post(
+            f"/i/{_token(db)}/rsvp",
+            json={"nombre": "Ana", "asistira": True, "comentario": "   "},
+        )
+        assert r.json()["comentario"] is None
+
+
+class TestCambiarLaPropiaRespuesta:
+    def _crear(self, client, db, **extra):
+        cuerpo = {"nombre": "Ana", "asistira": True, **extra}
+        return client.post(f"/i/{_token(db)}/rsvp", json=cuerpo).json()
+
+    def test_al_confirmar_devuelve_el_token_para_editar(self, client, db):
+        assert self._crear(client, db)["token_edicion"]
+
+    def test_cambiar_no_crea_otra_respuesta(self, client, db):
+        creada = self._crear(client, db)
+        antes = db.query(Rsvp).count()
+
+        r = client.patch(
+            f"/i/{_token(db)}/rsvp/{creada['token_edicion']}",
+            json={"asistira": False},
+        )
+        assert r.status_code == 200
+        assert r.json()["asistira"] is False
+        assert db.query(Rsvp).count() == antes
+
+    def test_se_puede_cambiar_el_nombre_y_el_comentario(self, client, db):
+        creada = self._crear(client, db, comentario="Original")
+        r = client.patch(
+            f"/i/{_token(db)}/rsvp/{creada['token_edicion']}",
+            json={"nombre": "Ana Perez", "comentario": "Corregido"},
+        )
+        assert r.json()["nombre"] == "Ana Perez"
+        assert r.json()["comentario"] == "Corregido"
+
+    def test_con_un_token_ajeno_no_se_puede(self, client, db):
+        self._crear(client, db)
+        r = client.patch(
+            f"/i/{_token(db)}/rsvp/token-inventado", json={"asistira": False}
+        )
+        assert r.status_code == 404
+
+    def test_el_token_no_sirve_en_otra_invitacion(self, client, auth_headers, db):
+        creada = self._crear(client, db)
+        otra = client.post(
+            "/invitaciones", json={"titulo": "Otra"}, headers=auth_headers
+        ).json()
+
+        r = client.patch(
+            f"/i/{otra['token']}/rsvp/{creada['token_edicion']}",
+            json={"asistira": False},
+        )
+        assert r.status_code == 404
+
+    def test_el_admin_no_ve_el_token_en_el_listado(self, client, auth_headers, db):
+        self._crear(client, db)
+        listado = client.get("/rsvps", headers=auth_headers).json()
+        assert "token_edicion" not in listado["respuestas"][0]
+
+    def test_no_se_puede_dejar_el_nombre_vacio(self, client, db):
+        creada = self._crear(client, db)
+        r = client.patch(
+            f"/i/{_token(db)}/rsvp/{creada['token_edicion']}", json={"nombre": "  "}
+        )
+        assert r.status_code == 422

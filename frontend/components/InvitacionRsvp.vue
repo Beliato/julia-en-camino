@@ -6,11 +6,12 @@
  * la opción de cambiarlo.
  */
 interface DatosEvento {
-  evento_lugar: string | null
-  evento_fecha: string | null
-  evento_hora: string | null
-  evento_texto: string | null
-  evento_aviso: string | null
+  lugar: string | null
+  fecha: string | null
+  hora: string | null
+  texto: string | null
+  aviso: string | null
+  imagen_url: string | null
 }
 
 // Los datos llegan desde la página, que ya los pidió con el token: así
@@ -22,18 +23,27 @@ const toast = useToast()
 
 const hayDatosDelEvento = computed(() =>
   Boolean(
-    props.evento.evento_lugar ||
-      props.evento.evento_fecha ||
-      props.evento.evento_hora ||
-      props.evento.evento_texto,
+    props.evento.lugar ||
+      props.evento.fecha ||
+      props.evento.hora ||
+      props.evento.texto,
   ),
 )
-const { respuesta, cargar, guardar, olvidar } = useRsvpLocal()
+const { respuestas, cargar, guardar, olvidar } = useRsvpLocal()
 
-const LAMINA = '/invitacion-julia.webp'
+/** Lo que ya respondió este navegador para esta invitación. */
+const respuesta = computed(() => respuestas.value[props.token] ?? null)
+/** En modo edición se muestra el formulario aunque ya haya respuesta. */
+const editando = ref(false)
+
+// Lámina propia si la invitación tiene una; si no, la que viene con la
+// app, que sirve para varias tandas del mismo baby shower.
+const LAMINA_POR_DEFECTO = '/invitacion-julia.webp'
+const lamina = computed(() => props.evento.imagen_url || LAMINA_POR_DEFECTO)
 
 const nombre = ref('')
 const asistira = ref<'SI' | 'NO'>('SI')
+const comentario = ref('')
 const enviando = ref(false)
 const laminaOk = ref(true)
 
@@ -44,19 +54,51 @@ const puedeEnviar = computed(() => !!nombre.value.trim())
 async function enviar() {
   if (!puedeEnviar.value) return
   enviando.value = true
+  const datos = {
+    nombre: nombre.value.trim(),
+    asistira: asistira.value === 'SI',
+    comentario: comentario.value.trim() || null,
+  }
+  const previa = respuesta.value
   try {
-    await $fetch(`/i/${props.token}/rsvp`, {
-      method: 'POST',
-      baseURL: runtime.public.apiBase,
-      body: { nombre: nombre.value.trim(), asistira: asistira.value === 'SI' },
-    })
-    guardar({ nombre: nombre.value.trim(), asistira: asistira.value === 'SI' })
+    if (previa) {
+      // Se edita la que ya existe en vez de crear otra: si no, cambiar de
+      // opinión dejaba viva la vieja y en el admin aparecían las dos.
+      await $fetch(`/i/${props.token}/rsvp/${previa.token}`, {
+        method: 'PATCH',
+        baseURL: runtime.public.apiBase,
+        body: datos,
+      })
+      guardar(props.token, { ...previa, ...datos, comentario: datos.comentario ?? '' })
+    } else {
+      const creada = await $fetch<{ token_edicion: string }>(
+        `/i/${props.token}/rsvp`,
+        { method: 'POST', baseURL: runtime.public.apiBase, body: datos },
+      )
+      guardar(props.token, {
+        token: creada.token_edicion,
+        nombre: datos.nombre,
+        asistira: datos.asistira,
+        comentario: datos.comentario ?? '',
+      })
+    }
+    editando.value = false
     toast.add({
-      title:
-        asistira.value === 'SI' ? '¡Te esperamos! 💕' : 'Gracias por avisar',
+      title: datos.asistira ? '¡Te esperamos! 💕' : 'Gracias por avisar',
       color: 'pink',
     })
-  } catch {
+  } catch (e: unknown) {
+    // 404 en el PATCH: el admin borró esa respuesta. Se olvida acá y se
+    // vuelve al formulario limpio en vez de dejar a la persona trabada.
+    if ((e as { statusCode?: number }).statusCode === 404) {
+      olvidar(props.token)
+      toast.add({
+        title: 'Tu respuesta anterior ya no está',
+        description: 'Volvé a confirmar, por favor.',
+        color: 'amber',
+      })
+      return
+    }
     toast.add({
       title: 'No se pudo enviar',
       description: 'Probá de nuevo en un momento.',
@@ -70,7 +112,8 @@ async function enviar() {
 function volverAResponder() {
   nombre.value = respuesta.value?.nombre ?? ''
   asistira.value = respuesta.value?.asistira === false ? 'NO' : 'SI'
-  olvidar()
+  comentario.value = respuesta.value?.comentario ?? ''
+  editando.value = true
 }
 </script>
 
@@ -83,7 +126,7 @@ function volverAResponder() {
          de la imagen en cualquier ancho. -->
     <div v-if="laminaOk" class="relative mx-auto w-full max-w-md">
       <img
-        :src="LAMINA"
+        :src="lamina"
         alt="Invitación al baby shower de Julia"
         class="w-full rounded-xl shadow-sm"
         @error="laminaOk = false"
@@ -93,25 +136,25 @@ function volverAResponder() {
         class="absolute inset-x-[12%] top-[38%] text-center text-[#4A240E]"
       >
         <p
-          v-if="evento.evento_texto"
+          v-if="evento.texto"
           class="text-[2.6vw] leading-snug sm:text-xs"
         >
-          {{ evento.evento_texto }}
+          {{ evento.texto }}
         </p>
         <p
-          v-if="evento.evento_fecha"
+          v-if="evento.fecha"
           class="mt-[3%] font-serif text-[4vw] italic sm:text-lg"
         >
-          {{ evento.evento_fecha }}
+          {{ evento.fecha }}
         </p>
-        <p v-if="evento.evento_hora" class="text-[3vw] sm:text-sm">
-          {{ evento.evento_hora }}
+        <p v-if="evento.hora" class="text-[3vw] sm:text-sm">
+          {{ evento.hora }}
         </p>
         <p
-          v-if="evento.evento_lugar"
+          v-if="evento.lugar"
           class="mt-[3%] text-[3vw] font-medium sm:text-sm"
         >
-          {{ evento.evento_lugar }}
+          {{ evento.lugar }}
         </p>
       </div>
     </div>
@@ -121,14 +164,14 @@ function volverAResponder() {
            más se puede avisar. Va afuera de las dos tarjetas para que se
            vea igual antes y después de responder. -->
       <p
-        v-if="evento.evento_aviso"
+        v-if="evento.aviso"
         class="mb-3 text-center text-sm text-neutral-600 dark:text-neutral-400"
       >
-        {{ evento.evento_aviso }}
+        {{ evento.aviso }}
       </p>
 
       <!-- Ya respondió desde este navegador -->
-      <UCard v-if="respuesta">
+      <UCard v-if="respuesta && !editando">
         <p class="text-sm text-neutral-600 dark:text-neutral-400">
           {{ respuesta.asistira ? '¡Te esperamos!' : 'Nos avisaste que no vas a poder.' }}
         </p>
@@ -159,13 +202,29 @@ function volverAResponder() {
               ]"
             />
           </UFormGroup>
+          <UFormGroup label="Comentarios para Julia">
+            <UTextarea
+              v-model="comentario"
+              :rows="3"
+              placeholder="Un mensaje para cuando sepa leer…"
+            />
+          </UFormGroup>
           <UButton
             type="submit"
             block
             :loading="enviando"
             :disabled="!puedeEnviar"
           >
-            Confirmar
+            {{ editando ? 'Guardar cambio' : 'Confirmar' }}
+          </UButton>
+          <UButton
+            v-if="editando"
+            variant="ghost"
+            color="gray"
+            block
+            @click="editando = false"
+          >
+            Cancelar
           </UButton>
         </form>
       </UCard>
