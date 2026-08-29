@@ -16,7 +16,14 @@ class WishlistConfig(Base):
     __tablename__ = "wishlist_config"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    # Dos links independientes a propósito: la wishlist se pasa solo a
+    # quien pregunta qué hace falta, y la invitación se manda a todos los
+    # convidados. Con un token compartido, invitar a alguien al shower
+    # sería mostrarle también la lista de regalos.
     share_token: Mapped[str] = mapped_column(
+        String(36), unique=True, default=_nuevo_share_token
+    )
+    invitacion_token: Mapped[str] = mapped_column(
         String(36), unique=True, default=_nuevo_share_token
     )
     nombre_app: Mapped[str] = mapped_column(String(100), default=NOMBRE_APP_DEFAULT)

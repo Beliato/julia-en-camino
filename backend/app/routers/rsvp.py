@@ -19,10 +19,16 @@ from app.schemas.rsvp import ResumenRsvp, RsvpCreate, RsvpOut
 router = APIRouter(tags=["rsvp"])
 
 
-def _validar_token(share_token: str, db: Session) -> None:
+def _validar_token(invitacion_token: str, db: Session) -> None:
+    """Contra el token de la invitación, no el de la wishlist.
+
+    Son links distintos a propósito: confirmar asistencia se hace desde
+    la invitación, que se manda a todos, y no desde la lista de regalos,
+    que se pasa solo a quien pregunta.
+    """
     config = (
         db.query(WishlistConfig)
-        .filter(WishlistConfig.share_token == share_token)
+        .filter(WishlistConfig.invitacion_token == invitacion_token)
         .first()
     )
     if not config:
@@ -30,18 +36,18 @@ def _validar_token(share_token: str, db: Session) -> None:
 
 
 @router.post(
-    "/w/{share_token}/rsvp",
+    "/i/{invitacion_token}/rsvp",
     response_model=RsvpOut,
     status_code=status.HTTP_201_CREATED,
 )
 @limiter.limit("10/minute")
 def responder(
     request: Request,
-    share_token: str,
+    invitacion_token: str,
     body: RsvpCreate,
     db: Session = Depends(get_db),
 ):
-    _validar_token(share_token, db)
+    _validar_token(invitacion_token, db)
     rsvp = Rsvp(nombre=body.nombre, asistira=body.asistira)
     db.add(rsvp)
     db.commit()
