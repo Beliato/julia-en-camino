@@ -12,6 +12,7 @@ from app.models.item import (
 )
 from app.models.regalo import FotoRegalo, OrigenRegalo, Regalo
 from app.models.reserva import Reserva
+from app.models.rsvp import Rsvp
 from app.models.wishlist_config import WishlistConfig
 
 __all__ = [
@@ -29,5 +30,6 @@ __all__ = [
     "RangoPrecio",
     "Regalo",
     "Reserva",
+    "Rsvp",
     "WishlistConfig",
 ]

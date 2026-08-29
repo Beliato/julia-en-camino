@@ -13,6 +13,7 @@ from app.routers import (
     fotos,
     items,
     regalos,
+    rsvp,
     wishlist,
 )
 
@@ -63,6 +64,7 @@ app.include_router(cajas.items_router)
 app.include_router(categorias.router)
 app.include_router(fotos.router)
 app.include_router(regalos.router)
+app.include_router(rsvp.router)
 app.include_router(wishlist.router)
 
 
