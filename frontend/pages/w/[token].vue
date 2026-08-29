@@ -179,10 +179,7 @@ async function deshacer(itemId: number) {
       >
         {{ nombreApp }}
       </h1>
-      <p class="mt-2 text-lg text-neutral-700 dark:text-neutral-300">
-        Florece donde estás plantada
-      </p>
-      <p class="mt-8 text-2xl tracking-[0.6em] text-pink-400" aria-hidden="true">
+      <p class="mt-6 text-2xl tracking-[0.6em] text-pink-400" aria-hidden="true">
         ❀
       </p>
     </header>

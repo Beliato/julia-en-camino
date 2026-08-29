@@ -69,6 +69,7 @@ en runtime.
 `pages/w/[token].vue` se reescribe con tres bloques:
 
 1. **Hero** — nombre configurado, la frase "Florece donde estás plantada"
+   (quitada después, en la 005)
    y la ilustración floral. Si la ilustración no está en
    `frontend/public/`, el bloque se degrada al ícono de Julia sin romper.
 2. **Regalos recibidos** — grilla de tarjetas con la foto, el objeto y de
