@@ -20,7 +20,8 @@ El diseño de referencia se hizo en Google Stitch (ver
 Una sola página pública que reemplaza a la wishlist actual como destino
 del link compartido, con tres bloques:
 
-1. **Hero** — nombre, la frase "Florece donde estás plantada" y la
+1. **Hero** — nombre, la frase "Florece donde estás plantada" (quitada
+   después, en la 005: no gustó) y la
    ilustración floral.
 2. **Regalos recibidos** — muro de agradecimiento: qué recibieron y de
    parte de quién.
