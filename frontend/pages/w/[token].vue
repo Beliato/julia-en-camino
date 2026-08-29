@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ItemPublico, RegaloPublico, WishlistPublica } from '~/types/api'
+import type { ItemPublico, WishlistPublica } from '~/types/api'
 import { RANGO_PRECIO_LABEL } from '~/types/api'
 
 definePageMeta({ layout: false })
@@ -12,7 +12,6 @@ const { reservas, cargar, guardar, olvidar } = useReservasLocales()
 const token = computed(() => String(route.params.token))
 const nombreApp = ref('Julia en Camino')
 const items = ref<ItemPublico[]>([])
-const recibidos = ref<RegaloPublico[]>([])
 const cargando = ref(true)
 const error = ref(false)
 
@@ -71,7 +70,6 @@ async function fetchWishlist() {
     })
     nombreApp.value = data.nombre_app
     items.value = data.items
-    recibidos.value = data.recibidos ?? []
     error.value = false
   } catch {
     error.value = true
@@ -201,41 +199,6 @@ async function deshacer(itemId: number) {
       </UCard>
 
       <template v-else>
-        <!-- Muro de agradecimiento: solo lo ya recibido -->
-        <section v-if="recibidos.length > 0" class="mb-10">
-          <h2
-            class="mb-1 text-center font-serif text-2xl text-pink-800 dark:text-pink-200"
-          >
-            Regalos recibidos
-          </h2>
-          <p class="mb-5 text-center text-sm text-neutral-600 dark:text-neutral-400">
-            Con mucho cariño y gratitud.
-          </p>
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <UCard v-for="r in recibidos" :key="r.id">
-              <div class="flex flex-col items-center text-center">
-                <img
-                  v-if="r.foto"
-                  :src="r.foto"
-                  alt=""
-                  class="mb-4 h-32 w-32 rounded-full border border-neutral-200 object-cover dark:border-neutral-800"
-                >
-                <div
-                  v-else
-                  class="mb-4 flex h-32 w-32 items-center justify-center rounded-full border border-neutral-200 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900"
-                  aria-hidden="true"
-                >
-                  <UIcon name="i-heroicons-gift" class="h-10 w-10 text-pink-400" />
-                </div>
-                <p class="font-serif text-lg">{{ r.item }}</p>
-                <p class="mt-1 text-sm italic text-neutral-600 dark:text-neutral-400">
-                  de {{ r.persona }}
-                </p>
-              </div>
-            </UCard>
-          </div>
-        </section>
-
         <h2
           v-if="items.length > 0"
           class="mb-1 text-center font-serif text-2xl text-pink-800 dark:text-pink-200"
