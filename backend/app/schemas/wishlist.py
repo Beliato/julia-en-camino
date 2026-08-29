@@ -6,10 +6,27 @@ from app.schemas.item import FotoItemOut
 
 class ConfigOut(BaseModel):
     nombre_app: str
+    evento_lugar: str | None = None
+    evento_fecha: str | None = None
+    evento_hora: str | None = None
+    evento_texto: str | None = None
+
+    class Config:
+        from_attributes = True
 
 
 class ConfigUpdate(BaseModel):
-    nombre_app: str = Field(min_length=1, max_length=100)
+    """Los campos del evento son opcionales: mandar solo los que cambian.
+
+    Un string vacío borra el dato, que es como se saca un renglón de la
+    invitación sin tener que mandar null a mano desde el formulario.
+    """
+
+    nombre_app: str | None = Field(default=None, min_length=1, max_length=100)
+    evento_lugar: str | None = Field(default=None, max_length=255)
+    evento_fecha: str | None = Field(default=None, max_length=100)
+    evento_hora: str | None = Field(default=None, max_length=100)
+    evento_texto: str | None = Field(default=None, max_length=500)
 
 
 class WishlistLinkOut(BaseModel):

@@ -337,6 +337,7 @@ async function deshacer(itemId: number) {
           </div>
         </section>
       </template>
+      <InvitacionRsvp :token="token" />
     </main>
 
     <Transition name="subir">

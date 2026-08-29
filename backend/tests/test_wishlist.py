@@ -35,7 +35,15 @@ def test_wishlist_token_invalido_404(client, config):
 def test_config_default(client, config):
     r = client.get("/config")
     assert r.status_code == 200
-    assert r.json() == {"nombre_app": "Julia en Camino"}
+    assert r.json() == {
+        "nombre_app": "Julia en Camino",
+        # Los datos del baby shower nacen vacíos: hasta que no se cargan
+        # desde Ajustes, la invitación no muestra ese bloque.
+        "evento_lugar": None,
+        "evento_fecha": None,
+        "evento_hora": None,
+        "evento_texto": None,
+    }
 
 
 def test_config_update_admin(client, auth_headers, config):

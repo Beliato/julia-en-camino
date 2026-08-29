@@ -270,6 +270,13 @@ function salir() {
         <UButton
           variant="ghost"
           color="gray"
+          icon="i-heroicons-envelope-open"
+          to="/admin/invitados"
+          aria-label="Ver quién viene al baby shower"
+        />
+        <UButton
+          variant="ghost"
+          color="gray"
           icon="i-heroicons-cog-6-tooth"
           to="/admin/ajustes"
           aria-label="Ajustes"
