@@ -2,62 +2,43 @@ import { defineStore } from 'pinia'
 
 const NOMBRE_DEFAULT = 'Julia en Camino'
 
-interface ConfigApi {
-  nombre_app: string
-  evento_lugar: string | null
-  evento_fecha: string | null
-  evento_hora: string | null
-  evento_texto: string | null
+/** Campos del evento. Se editan desde Ajustes y se leen desde el
+ *  endpoint de la invitación, contra su token — no desde /config, que es
+ *  público y sin token. */
+export interface CambiosConfig {
+  nombre_app?: string
+  evento_lugar?: string
+  evento_fecha?: string
+  evento_hora?: string
+  evento_texto?: string
 }
 
 export const useConfigStore = defineStore('config', {
   state: () => ({
     nombreApp: NOMBRE_DEFAULT,
-    eventoLugar: '' as string,
-    eventoFecha: '' as string,
-    eventoHora: '' as string,
-    eventoTexto: '' as string,
     cargado: false,
   }),
-  getters: {
-    /** Si no se cargó ningún dato, la invitación no muestra el bloque. */
-    hayDatosDelEvento: (state) =>
-      !!(
-        state.eventoLugar ||
-        state.eventoFecha ||
-        state.eventoHora ||
-        state.eventoTexto
-      ),
-  },
   actions: {
-    _aplicar(data: ConfigApi) {
-      this.nombreApp = data.nombre_app
-      this.eventoLugar = data.evento_lugar ?? ''
-      this.eventoFecha = data.evento_fecha ?? ''
-      this.eventoHora = data.evento_hora ?? ''
-      this.eventoTexto = data.evento_texto ?? ''
-    },
     async fetch() {
       if (this.cargado) return
       try {
         const config = useRuntimeConfig()
-        const data = await $fetch<ConfigApi>('/config', {
+        const data = await $fetch<{ nombre_app: string }>('/config', {
           baseURL: config.public.apiBase,
         })
-        this._aplicar(data)
+        this.nombreApp = data.nombre_app
         this.cargado = true
       } catch {
         // Sin backend disponible se mantiene el default — la UI no se rompe.
       }
     },
-    /** Guarda desde Ajustes. Solo manda lo que se le pasa. */
-    async guardar(cambios: Partial<ConfigApi>) {
+    async guardar(cambios: CambiosConfig) {
       const api = useApi()
-      const data = await api<ConfigApi>('/config', {
+      const data = await api<{ nombre_app: string }>('/config', {
         method: 'PATCH',
         body: cambios,
       })
-      this._aplicar(data)
+      this.nombreApp = data.nombre_app
       return data
     },
     setNombre(nombre: string) {

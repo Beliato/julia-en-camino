@@ -1,16 +1,32 @@
 <script setup lang="ts">
 /** La invitación al baby shower y el formulario para confirmar.
  *
- * Vive en la página pública porque se comparte con el mismo link que la
- * wishlist. Si ya se respondió desde este navegador se muestra lo que se
- * eligió, con la opción de cambiarlo.
+ * Vive en su propia página, con un link distinto al de la wishlist. Si
+ * ya se respondió desde este navegador se muestra lo que se eligió, con
+ * la opción de cambiarlo.
  */
-const props = defineProps<{ token: string }>()
+interface DatosEvento {
+  evento_lugar: string | null
+  evento_fecha: string | null
+  evento_hora: string | null
+  evento_texto: string | null
+}
+
+// Los datos llegan desde la página, que ya los pidió con el token: así
+// este componente no vuelve a llamar a la API.
+const props = defineProps<{ token: string; evento: DatosEvento }>()
 
 const runtime = useRuntimeConfig()
 const toast = useToast()
-const config = useConfigStore()
-const { hayDatosDelEvento } = storeToRefs(config)
+
+const hayDatosDelEvento = computed(() =>
+  Boolean(
+    props.evento.evento_lugar ||
+      props.evento.evento_fecha ||
+      props.evento.evento_hora ||
+      props.evento.evento_texto,
+  ),
+)
 const { respuesta, cargar, guardar, olvidar } = useRsvpLocal()
 
 const LAMINA = '/invitacion-julia.webp'
@@ -20,10 +36,7 @@ const asistira = ref<'SI' | 'NO'>('SI')
 const enviando = ref(false)
 const laminaOk = ref(true)
 
-onMounted(() => {
-  cargar()
-  config.fetch()
-})
+onMounted(cargar)
 
 const puedeEnviar = computed(() => !!nombre.value.trim())
 
@@ -31,7 +44,7 @@ async function enviar() {
   if (!puedeEnviar.value) return
   enviando.value = true
   try {
-    await $fetch(`/w/${props.token}/rsvp`, {
+    await $fetch(`/i/${props.token}/rsvp`, {
       method: 'POST',
       baseURL: runtime.public.apiBase,
       body: { nombre: nombre.value.trim(), asistira: asistira.value === 'SI' },
@@ -61,7 +74,7 @@ function volverAResponder() {
 </script>
 
 <template>
-  <section class="mt-12">
+  <section>
     <!-- Los datos van encima de la lámina, en su franja central vacía, y
          no quemados en la imagen: si cambia la hora se edita desde
          Ajustes en vez de volver a exportar desde Illustrator.
@@ -79,25 +92,25 @@ function volverAResponder() {
         class="absolute inset-x-[12%] top-[38%] text-center text-[#4A240E]"
       >
         <p
-          v-if="config.eventoTexto"
+          v-if="evento.evento_texto"
           class="text-[2.6vw] leading-snug sm:text-xs"
         >
-          {{ config.eventoTexto }}
+          {{ evento.evento_texto }}
         </p>
         <p
-          v-if="config.eventoFecha"
+          v-if="evento.evento_fecha"
           class="mt-[3%] font-serif text-[4vw] italic sm:text-lg"
         >
-          {{ config.eventoFecha }}
+          {{ evento.evento_fecha }}
         </p>
-        <p v-if="config.eventoHora" class="text-[3vw] sm:text-sm">
-          {{ config.eventoHora }}
+        <p v-if="evento.evento_hora" class="text-[3vw] sm:text-sm">
+          {{ evento.evento_hora }}
         </p>
         <p
-          v-if="config.eventoLugar"
+          v-if="evento.evento_lugar"
           class="mt-[3%] text-[3vw] font-medium sm:text-sm"
         >
-          {{ config.eventoLugar }}
+          {{ evento.evento_lugar }}
         </p>
       </div>
     </div>

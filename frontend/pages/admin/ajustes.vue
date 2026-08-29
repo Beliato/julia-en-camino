@@ -5,6 +5,8 @@ const config = useConfigStore()
 const toast = useToast()
 
 const shareToken = ref('')
+const invitacionToken = ref('')
+const copiadoInvitacion = ref(false)
 const nombre = ref('')
 const guardando = ref(false)
 const copiado = ref(false)
@@ -15,23 +17,46 @@ const guardandoEvento = ref(false)
 const shareUrl = computed(() =>
   shareToken.value ? `${location.origin}/w/${shareToken.value}` : '',
 )
+const invitacionUrl = computed(() =>
+  invitacionToken.value ? `${location.origin}/i/${invitacionToken.value}` : '',
+)
 
 onMounted(async () => {
   await config.fetch()
   nombre.value = config.nombreApp
-  evento.lugar = config.eventoLugar
-  evento.fecha = config.eventoFecha
-  evento.hora = config.eventoHora
-  evento.texto = config.eventoTexto
+
   const api = useApi()
-  const data = await api<{ share_token: string }>('/wishlist/link')
+  const data = await api<{ share_token: string; invitacion_token: string }>(
+    '/wishlist/link',
+  )
   shareToken.value = data.share_token
+  invitacionToken.value = data.invitacion_token
+
+  // Los datos del evento se leen contra el token de la invitación: no
+  // viajan en /config, que es público y sin token.
+  const runtime = useRuntimeConfig()
+  const inv = await $fetch<{
+    evento_lugar: string | null
+    evento_fecha: string | null
+    evento_hora: string | null
+    evento_texto: string | null
+  }>(`/i/${data.invitacion_token}`, { baseURL: runtime.public.apiBase })
+  evento.lugar = inv.evento_lugar ?? ''
+  evento.fecha = inv.evento_fecha ?? ''
+  evento.hora = inv.evento_hora ?? ''
+  evento.texto = inv.evento_texto ?? ''
 })
 
 async function copiarLink() {
   await navigator.clipboard.writeText(shareUrl.value)
   copiado.value = true
   setTimeout(() => (copiado.value = false), 2000)
+}
+
+async function copiarInvitacion() {
+  await navigator.clipboard.writeText(invitacionUrl.value)
+  copiadoInvitacion.value = true
+  setTimeout(() => (copiadoInvitacion.value = false), 2000)
 }
 
 async function guardarNombre() {
@@ -83,12 +108,42 @@ async function guardarEvento() {
 
     <UCard>
       <template #header>
+        <h3 class="font-medium">Invitación al baby shower</h3>
+      </template>
+      <div class="space-y-3">
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          Este es el link para invitar. Muestra la invitación y el formulario
+          para confirmar asistencia — no muestra la lista de regalos.
+        </p>
+        <div class="flex gap-2">
+          <UInput
+            :model-value="invitacionUrl"
+            readonly
+            class="flex-1"
+            aria-label="Link de la invitación"
+          />
+          <UButton
+            :icon="copiadoInvitacion ? 'i-heroicons-check' : 'i-heroicons-clipboard'"
+            :color="copiadoInvitacion ? 'green' : 'pink'"
+            @click="copiarInvitacion"
+          >
+            {{ copiadoInvitacion ? 'Copiado' : 'Copiar' }}
+          </UButton>
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          Antes de mandarlo, cargá los datos del evento acá abajo.
+        </p>
+      </div>
+    </UCard>
+
+    <UCard>
+      <template #header>
         <h3 class="font-medium">Compartir la wishlist</h3>
       </template>
       <div class="space-y-3">
         <p class="text-sm text-gray-600 dark:text-gray-300">
-          Comparte este link con familiares y amigos. Verán solo los items
-          por comprar y podrán reservar qué regalar — sin crear cuenta.
+          Link aparte, para quien pregunte qué hace falta. Verán solo los
+          items por comprar y podrán reservar qué regalar — sin crear cuenta.
         </p>
         <div class="flex gap-2">
           <UInput :model-value="shareUrl" readonly class="flex-1" aria-label="Link de la wishlist" />

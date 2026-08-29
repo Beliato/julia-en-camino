@@ -4,19 +4,25 @@ from app.models.rsvp import Rsvp
 from app.models.wishlist_config import WishlistConfig
 
 
-def _token(db) -> str:
+def _config(db) -> WishlistConfig:
     config = db.query(WishlistConfig).first()
     if not config:
         config = WishlistConfig()
         db.add(config)
         db.commit()
-    return config.share_token
+        db.refresh(config)
+    return config
+
+
+def _token(db) -> str:
+    """El token de la invitacion, que es con el que se confirma."""
+    return _config(db).invitacion_token
 
 
 class TestResponder:
     def test_alguien_con_el_link_puede_confirmar(self, client, db):
         r = client.post(
-            f"/w/{_token(db)}/rsvp",
+            f"/i/{_token(db)}/rsvp",
             json={"nombre": "Hannia Solano", "asistira": True},
         )
         assert r.status_code == 201
@@ -25,27 +31,27 @@ class TestResponder:
 
     def test_tambien_se_puede_decir_que_no(self, client, db):
         r = client.post(
-            f"/w/{_token(db)}/rsvp", json={"nombre": "Ana", "asistira": False}
+            f"/i/{_token(db)}/rsvp", json={"nombre": "Ana", "asistira": False}
         )
         assert r.status_code == 201
         assert r.json()["asistira"] is False
 
     def test_un_token_inventado_no_sirve(self, client):
         r = client.post(
-            "/w/token-que-no-existe/rsvp",
+            "/i/token-que-no-existe/rsvp",
             json={"nombre": "Colado", "asistira": True},
         )
         assert r.status_code == 404
 
     def test_el_nombre_no_puede_ser_espacios(self, client, db):
         r = client.post(
-            f"/w/{_token(db)}/rsvp", json={"nombre": "   ", "asistira": True}
+            f"/i/{_token(db)}/rsvp", json={"nombre": "   ", "asistira": True}
         )
         assert r.status_code == 422
 
     def test_el_nombre_se_guarda_sin_espacios_de_sobra(self, client, db):
         r = client.post(
-            f"/w/{_token(db)}/rsvp",
+            f"/i/{_token(db)}/rsvp",
             json={"nombre": "  Marta  ", "asistira": True},
         )
         assert r.json()["nombre"] == "Marta"
@@ -87,7 +93,7 @@ class TestConsultaDelAdmin:
 
 
 class TestDatosDelEvento:
-    def test_la_config_publica_los_devuelve(self, client, auth_headers):
+    def test_la_config_publica_los_devuelve(self, client, auth_headers, db):
         client.patch(
             "/config",
             json={
@@ -98,11 +104,13 @@ class TestDatosDelEvento:
             },
             headers=auth_headers,
         )
-        datos = client.get("/config").json()
+        datos = client.get(f"/i/{_token(db)}").json()
         assert datos["evento_lugar"] == "Salón El Jardín"
         assert datos["evento_fecha"] == "Sábado 15 de noviembre"
 
-    def test_se_puede_cambiar_solo_uno_sin_pisar_los_demas(self, client, auth_headers):
+    def test_se_puede_cambiar_solo_uno_sin_pisar_los_demas(
+        self, client, auth_headers, db
+    ):
         client.patch(
             "/config",
             json={"evento_lugar": "Casa", "evento_hora": "5 pm"},
@@ -110,15 +118,15 @@ class TestDatosDelEvento:
         )
         client.patch("/config", json={"evento_hora": "6 pm"}, headers=auth_headers)
 
-        datos = client.get("/config").json()
+        datos = client.get(f"/i/{_token(db)}").json()
         assert datos["evento_lugar"] == "Casa"
         assert datos["evento_hora"] == "6 pm"
 
-    def test_vaciar_un_campo_lo_borra(self, client, auth_headers):
+    def test_vaciar_un_campo_lo_borra(self, client, auth_headers, db):
         client.patch("/config", json={"evento_hora": "5 pm"}, headers=auth_headers)
         client.patch("/config", json={"evento_hora": ""}, headers=auth_headers)
 
-        assert client.get("/config").json()["evento_hora"] is None
+        assert client.get(f"/i/{_token(db)}").json()["evento_hora"] is None
 
     def test_el_nombre_de_la_app_sigue_andando(self, client, auth_headers):
         r = client.patch(
@@ -129,3 +137,29 @@ class TestDatosDelEvento:
     def test_sin_sesion_no_se_puede_cambiar(self, client):
         r = client.patch("/config", json={"evento_lugar": "Colado"})
         assert r.status_code in (401, 403)
+
+
+class TestLinksSeparados:
+    def test_el_token_de_la_wishlist_no_sirve_para_confirmar(self, client, db):
+        config = _config(db)
+        r = client.post(
+            f"/i/{config.share_token}/rsvp",
+            json={"nombre": "Colado", "asistira": True},
+        )
+        assert r.status_code == 404
+
+    def test_el_token_de_la_invitacion_no_abre_la_wishlist(self, client, db):
+        config = _config(db)
+        assert client.get(f"/w/{config.invitacion_token}").status_code == 404
+
+    def test_son_tokens_distintos(self, db):
+        config = _config(db)
+        assert config.share_token != config.invitacion_token
+
+    def test_el_admin_ve_los_dos_links(self, client, auth_headers):
+        datos = client.get("/wishlist/link", headers=auth_headers).json()
+        assert datos["share_token"] and datos["invitacion_token"]
+        assert datos["share_token"] != datos["invitacion_token"]
+
+    def test_un_token_de_invitacion_inventado_da_404(self, client):
+        assert client.get("/i/no-existe").status_code == 404

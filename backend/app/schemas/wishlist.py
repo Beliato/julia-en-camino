@@ -5,6 +5,22 @@ from app.schemas.item import FotoItemOut
 
 
 class ConfigOut(BaseModel):
+    """Lo que necesita el armazón de la app. Público y sin token.
+
+    Los datos del evento no van acá: se sirven solo contra el token de la
+    invitación, así el lugar y la hora no quedan consultables por
+    cualquiera que dé con la API.
+    """
+
+    nombre_app: str
+
+    class Config:
+        from_attributes = True
+
+
+class InvitacionOut(BaseModel):
+    """La invitación, contra su propio token."""
+
     nombre_app: str
     evento_lugar: str | None = None
     evento_fecha: str | None = None
@@ -31,6 +47,7 @@ class ConfigUpdate(BaseModel):
 
 class WishlistLinkOut(BaseModel):
     share_token: str
+    invitacion_token: str
 
 
 class ItemPublicoOut(BaseModel):

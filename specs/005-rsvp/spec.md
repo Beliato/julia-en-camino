@@ -8,15 +8,25 @@ Hizo falta.
 
 ## Qué se construye
 
-1. **Una sección en la página pública** con la lámina de la invitación y
-   un formulario de dos campos: nombre y si va a poder venir o no.
+1. **Una página propia para la invitación**, con su propio link, donde
+   la lámina y el formulario son lo único que hay.
 2. **Una pantalla en el admin** para ir viendo quiénes confirmaron.
 
 ## Decisiones
 
-1. **Sin identidad, igual que las reservas.** La invitación se comparte
-   con el mismo link que la wishlist; nadie crea cuenta. El envío va con
-   el mismo límite de 10 por minuto que las reservas.
+0. **Dos links independientes.** La wishlist se pasa solo a quien
+   pregunta qué hace falta; la invitación se manda a todos los
+   convidados. Con un token compartido, invitar a alguien al shower
+   sería mostrarle también la lista de regalos, que no es lo que se
+   quiere. Por eso `wishlist_config` guarda dos tokens y ninguno sirve
+   para lo del otro.
+
+   Como corolario, los datos del evento salieron de `GET /config`, que
+   es público y sin token, y se sirven solo contra `GET /i/{token}`: el
+   lugar y la hora no tienen por qué ser consultables sin el link.
+
+1. **Sin identidad, igual que las reservas.** Nadie crea cuenta. El
+   envío va con el mismo límite de 10 por minuto que las reservas.
 
 2. **Se acepta que alguien responda dos veces.** El navegador recuerda
    la respuesta en localStorage y muestra lo elegido con opción a
@@ -42,9 +52,13 @@ Hizo falta.
 - **Fecha, hora y lugar del evento.** La lámina no los trae y no se
   inventan (ver Pendiente).
 
+5. **Lugar, fecha, hora y texto van encima de la lámina, no quemados
+   en ella.** El centro del dibujo está vacío a propósito. Se guardan en
+   `wishlist_config` y se editan desde Ajustes, así cambiar la hora no
+   obliga a reexportar desde Illustrator. Son texto libre y no fecha y
+   hora tipadas: se escriben una vez y se leen tal cual.
+
 ## Pendiente
 
-La invitación **no dice cuándo ni dónde**: el centro de la lámina está
-vacío. Alguien puede confirmar sin saber a qué se está anotando. Hay que
-resolverlo antes de compartir el link, sea reexportando el SVG con los
-datos puestos o agregándolos como texto debajo de la imagen.
+Cargar los datos del evento desde Ajustes antes de mandar el link. Sin
+ellos la invitación se muestra sin fecha ni lugar.
