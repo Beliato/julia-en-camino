@@ -1,9 +1,14 @@
+import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+
+
+def _nuevo_token() -> str:
+    return str(uuid.uuid4())
 
 
 class Rsvp(Base):
@@ -20,6 +25,12 @@ class Rsvp(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     invitacion_id: Mapped[int] = mapped_column(
         ForeignKey("invitaciones.id", ondelete="CASCADE"), index=True
+    )
+    # Credencial para editar la propia respuesta desde el navegador que
+    # la creó, igual que el token_deshacer de las reservas. Sin esto,
+    # cambiar de opinión dejaba la respuesta vieja viva y creaba otra.
+    token_edicion: Mapped[str] = mapped_column(
+        String(36), unique=True, default=_nuevo_token
     )
     nombre: Mapped[str] = mapped_column(String(255))
     asistira: Mapped[bool] = mapped_column(Boolean, default=True)

@@ -47,20 +47,32 @@ Hizo falta.
 5. **Sin identidad, igual que las reservas.** Nadie crea cuenta. El
    envío va con el mismo límite de 10 por minuto que las reservas.
 
-6. **Se acepta que alguien responda dos veces.** El navegador recuerda
-   la respuesta en localStorage y muestra lo elegido con opción a
-   cambiarlo, pero eso no es un control: basta otro teléfono. Deduplicar
-   por nombre obligaría a adivinar si «Ana» y «Ana Pérez» son la misma
-   persona, y equivocarse ahí borra la respuesta de alguien. Se prefiere
-   que el admin pueda borrar duplicados a mano.
+6. **Cambiar de opinión edita la respuesta, no crea otra.** Al
+   confirmar, la API devuelve un `token_edicion` que el navegador guarda
+   —el mismo patrón que el `token_deshacer` de las reservas— y con él se
+   hace PATCH sobre la propia respuesta. Sin eso, quien cambiaba de
+   opinión dejaba viva la vieja y en el admin aparecía dos veces.
 
-7. **La lámina que viene con la app se rasteriza.** El SVG que llegó de Illustrator pesa
+   Se guarda por invitación: alguien puede estar invitado a más de un
+   evento y responder distinto en cada uno.
+
+   Si el admin borró esa respuesta, el PATCH da 404 y el frontend lo
+   toma como señal para volver al formulario limpio, en vez de dejar a
+   la persona trabada.
+
+7. **Aun así se acepta que alguien responda dos veces.** Desde otro
+   teléfono no hay token que valga. Deduplicar por nombre obligaría a
+   adivinar si «Ana» y «Ana Pérez» son la misma persona, y equivocarse
+   ahí borra la respuesta de alguien. Se prefiere que el admin pueda
+   borrar duplicados a mano.
+
+8. **La lámina que viene con la app se rasteriza.** El SVG que llegó de Illustrator pesa
    12,4 MB, y optimizado con svgo sigue en 6,4 MB — inviable para una
    página que se abre desde el celular con datos. Rasterizado a WebP de
    1000px queda en 86 KB, unas 140 veces menos, y a la vista es el mismo
    dibujo.
 
-8. **Lugar, fecha, hora y texto van encima de la lámina, no quemados en
+9. **Lugar, fecha, hora y texto van encima de la lámina, no quemados en
    ella.** El centro del dibujo está vacío a propósito. Se guardan en
    `wishlist_config` y se editan desde Ajustes, así cambiar la hora no
    obliga a reexportar desde Illustrator. Son texto libre y no fecha y
@@ -68,14 +80,14 @@ Hizo falta.
    noviembre», «de 4 a 7 de la tarde»), así que tipar solo agregaría
    problemas de formato y zona horaria sin ganar nada.
 
-9. **El aviso sobre la confirmación va aparte del texto de la lámina.**
+10. **El aviso sobre la confirmación va aparte del texto de la lámina.**
    Es una instrucción («confirmá antes del 7 de noviembre, acá o con los
    papás»), no parte del dibujo, así que se muestra encima del
    formulario y no sobre la imagen. Se ve igual antes y después de
    responder: la fecha límite sigue importando si alguien quiere
    cambiar lo que contestó.
 
-10. **La respuesta se puede borrar pero no editar desde el admin.** Un
+11. **La respuesta se puede borrar pero no editar desde el admin.** Un
    nombre mal escrito lo escribió quien respondió; corregirlo por ellos
    invita a inventar. Borrar y que vuelva a confirmar es más honesto.
 

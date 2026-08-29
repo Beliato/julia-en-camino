@@ -29,7 +29,12 @@ const hayDatosDelEvento = computed(() =>
       props.evento.texto,
   ),
 )
-const { respuesta, cargar, guardar, olvidar } = useRsvpLocal()
+const { respuestas, cargar, guardar, olvidar } = useRsvpLocal()
+
+/** Lo que ya respondió este navegador para esta invitación. */
+const respuesta = computed(() => respuestas.value[props.token] ?? null)
+/** En modo edición se muestra el formulario aunque ya haya respuesta. */
+const editando = ref(false)
 
 // Lámina propia si la invitación tiene una; si no, la que viene con la
 // app, que sirve para varias tandas del mismo baby shower.
@@ -49,23 +54,51 @@ const puedeEnviar = computed(() => !!nombre.value.trim())
 async function enviar() {
   if (!puedeEnviar.value) return
   enviando.value = true
+  const datos = {
+    nombre: nombre.value.trim(),
+    asistira: asistira.value === 'SI',
+    comentario: comentario.value.trim() || null,
+  }
+  const previa = respuesta.value
   try {
-    await $fetch(`/i/${props.token}/rsvp`, {
-      method: 'POST',
-      baseURL: runtime.public.apiBase,
-      body: {
-        nombre: nombre.value.trim(),
-        asistira: asistira.value === 'SI',
-        comentario: comentario.value.trim() || null,
-      },
-    })
-    guardar({ nombre: nombre.value.trim(), asistira: asistira.value === 'SI' })
+    if (previa) {
+      // Se edita la que ya existe en vez de crear otra: si no, cambiar de
+      // opinión dejaba viva la vieja y en el admin aparecían las dos.
+      await $fetch(`/i/${props.token}/rsvp/${previa.token}`, {
+        method: 'PATCH',
+        baseURL: runtime.public.apiBase,
+        body: datos,
+      })
+      guardar(props.token, { ...previa, ...datos, comentario: datos.comentario ?? '' })
+    } else {
+      const creada = await $fetch<{ token_edicion: string }>(
+        `/i/${props.token}/rsvp`,
+        { method: 'POST', baseURL: runtime.public.apiBase, body: datos },
+      )
+      guardar(props.token, {
+        token: creada.token_edicion,
+        nombre: datos.nombre,
+        asistira: datos.asistira,
+        comentario: datos.comentario ?? '',
+      })
+    }
+    editando.value = false
     toast.add({
-      title:
-        asistira.value === 'SI' ? '¡Te esperamos! 💕' : 'Gracias por avisar',
+      title: datos.asistira ? '¡Te esperamos! 💕' : 'Gracias por avisar',
       color: 'pink',
     })
-  } catch {
+  } catch (e: unknown) {
+    // 404 en el PATCH: el admin borró esa respuesta. Se olvida acá y se
+    // vuelve al formulario limpio en vez de dejar a la persona trabada.
+    if ((e as { statusCode?: number }).statusCode === 404) {
+      olvidar(props.token)
+      toast.add({
+        title: 'Tu respuesta anterior ya no está',
+        description: 'Volvé a confirmar, por favor.',
+        color: 'amber',
+      })
+      return
+    }
     toast.add({
       title: 'No se pudo enviar',
       description: 'Probá de nuevo en un momento.',
@@ -79,7 +112,8 @@ async function enviar() {
 function volverAResponder() {
   nombre.value = respuesta.value?.nombre ?? ''
   asistira.value = respuesta.value?.asistira === false ? 'NO' : 'SI'
-  olvidar()
+  comentario.value = respuesta.value?.comentario ?? ''
+  editando.value = true
 }
 </script>
 
@@ -137,7 +171,7 @@ function volverAResponder() {
       </p>
 
       <!-- Ya respondió desde este navegador -->
-      <UCard v-if="respuesta">
+      <UCard v-if="respuesta && !editando">
         <p class="text-sm text-neutral-600 dark:text-neutral-400">
           {{ respuesta.asistira ? '¡Te esperamos!' : 'Nos avisaste que no vas a poder.' }}
         </p>
@@ -181,7 +215,16 @@ function volverAResponder() {
             :loading="enviando"
             :disabled="!puedeEnviar"
           >
-            Confirmar
+            {{ editando ? 'Guardar cambio' : 'Confirmar' }}
+          </UButton>
+          <UButton
+            v-if="editando"
+            variant="ghost"
+            color="gray"
+            block
+            @click="editando = false"
+          >
+            Cancelar
           </UButton>
         </form>
       </UCard>

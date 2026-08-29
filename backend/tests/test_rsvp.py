@@ -243,3 +243,64 @@ class TestComentarioParaJulia:
             json={"nombre": "Ana", "asistira": True, "comentario": "   "},
         )
         assert r.json()["comentario"] is None
+
+
+class TestCambiarLaPropiaRespuesta:
+    def _crear(self, client, db, **extra):
+        cuerpo = {"nombre": "Ana", "asistira": True, **extra}
+        return client.post(f"/i/{_token(db)}/rsvp", json=cuerpo).json()
+
+    def test_al_confirmar_devuelve_el_token_para_editar(self, client, db):
+        assert self._crear(client, db)["token_edicion"]
+
+    def test_cambiar_no_crea_otra_respuesta(self, client, db):
+        creada = self._crear(client, db)
+        antes = db.query(Rsvp).count()
+
+        r = client.patch(
+            f"/i/{_token(db)}/rsvp/{creada['token_edicion']}",
+            json={"asistira": False},
+        )
+        assert r.status_code == 200
+        assert r.json()["asistira"] is False
+        assert db.query(Rsvp).count() == antes
+
+    def test_se_puede_cambiar_el_nombre_y_el_comentario(self, client, db):
+        creada = self._crear(client, db, comentario="Original")
+        r = client.patch(
+            f"/i/{_token(db)}/rsvp/{creada['token_edicion']}",
+            json={"nombre": "Ana Perez", "comentario": "Corregido"},
+        )
+        assert r.json()["nombre"] == "Ana Perez"
+        assert r.json()["comentario"] == "Corregido"
+
+    def test_con_un_token_ajeno_no_se_puede(self, client, db):
+        self._crear(client, db)
+        r = client.patch(
+            f"/i/{_token(db)}/rsvp/token-inventado", json={"asistira": False}
+        )
+        assert r.status_code == 404
+
+    def test_el_token_no_sirve_en_otra_invitacion(self, client, auth_headers, db):
+        creada = self._crear(client, db)
+        otra = client.post(
+            "/invitaciones", json={"titulo": "Otra"}, headers=auth_headers
+        ).json()
+
+        r = client.patch(
+            f"/i/{otra['token']}/rsvp/{creada['token_edicion']}",
+            json={"asistira": False},
+        )
+        assert r.status_code == 404
+
+    def test_el_admin_no_ve_el_token_en_el_listado(self, client, auth_headers, db):
+        self._crear(client, db)
+        listado = client.get("/rsvps", headers=auth_headers).json()
+        assert "token_edicion" not in listado["respuestas"][0]
+
+    def test_no_se_puede_dejar_el_nombre_vacio(self, client, db):
+        creada = self._crear(client, db)
+        r = client.patch(
+            f"/i/{_token(db)}/rsvp/{creada['token_edicion']}", json={"nombre": "  "}
+        )
+        assert r.status_code == 422

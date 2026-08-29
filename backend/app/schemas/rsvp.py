@@ -23,6 +23,14 @@ class RsvpCreate(BaseModel):
         return (v or "").strip() or None
 
 
+class RsvpUpdate(BaseModel):
+    """Cambio de la propia respuesta. Todo opcional: se manda lo que cambia."""
+
+    nombre: str | None = Field(default=None, min_length=1, max_length=255)
+    asistira: bool | None = None
+    comentario: str | None = Field(default=None, max_length=2000)
+
+
 class RsvpOut(BaseModel):
     id: int
     invitacion_id: int
@@ -33,6 +41,12 @@ class RsvpOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class RsvpCreadoOut(RsvpOut):
+    """Lo que ve quien acaba de responder: incluye su token para editar."""
+
+    token_edicion: str
 
 
 class ResumenRsvp(BaseModel):
