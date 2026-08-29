@@ -11,6 +11,7 @@ export interface CambiosConfig {
   evento_fecha?: string
   evento_hora?: string
   evento_texto?: string
+  evento_aviso?: string
 }
 
 export const useConfigStore = defineStore('config', {

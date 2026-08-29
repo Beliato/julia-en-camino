@@ -49,7 +49,14 @@ Hizo falta.
    noviembre», «de 4 a 7 de la tarde»), así que tipar solo agregaría
    problemas de formato y zona horaria sin ganar nada.
 
-6. **La respuesta se puede borrar pero no editar desde el admin.** Un
+6. **El aviso sobre la confirmación va aparte del texto de la lámina.**
+   Es una instrucción («confirmá antes del 7 de noviembre, acá o con los
+   papás»), no parte del dibujo, así que se muestra encima del
+   formulario y no sobre la imagen. Se ve igual antes y después de
+   responder: la fecha límite sigue importando si alguien quiere
+   cambiar lo que contestó.
+
+7. **La respuesta se puede borrar pero no editar desde el admin.** Un
    nombre mal escrito lo escribió quien respondió; corregirlo por ellos
    invita a inventar. Borrar y que vuelva a confirmar es más honesto.
 

@@ -26,6 +26,7 @@ class InvitacionOut(BaseModel):
     evento_fecha: str | None = None
     evento_hora: str | None = None
     evento_texto: str | None = None
+    evento_aviso: str | None = None
 
     class Config:
         from_attributes = True
@@ -43,6 +44,7 @@ class ConfigUpdate(BaseModel):
     evento_fecha: str | None = Field(default=None, max_length=100)
     evento_hora: str | None = Field(default=None, max_length=100)
     evento_texto: str | None = Field(default=None, max_length=500)
+    evento_aviso: str | None = Field(default=None, max_length=500)
 
 
 class WishlistLinkOut(BaseModel):
