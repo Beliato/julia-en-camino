@@ -54,6 +54,7 @@ def responder(
         invitacion_id=inv.id,
         nombre=body.nombre,
         asistira=body.asistira,
+        cantidad=body.cantidad,
         comentario=body.comentario,
     )
     db.add(rsvp)
@@ -96,8 +97,9 @@ def cambiar_respuesta(
         rsvp.nombre = limpio
     if cambios.get("asistira") is not None:
         rsvp.asistira = cambios["asistira"]
-    if "comentario" in cambios:
-        rsvp.comentario = (cambios["comentario"] or "").strip() or None
+    for campo in ("cantidad", "comentario"):
+        if campo in cambios:
+            setattr(rsvp, campo, (cambios[campo] or "").strip() or None)
     db.commit()
     db.refresh(rsvp)
     return rsvp

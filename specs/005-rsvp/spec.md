@@ -91,10 +91,13 @@ Hizo falta.
    nombre mal escrito lo escribió quien respondió; corregirlo por ellos
    invita a inventar. Borrar y que vuelva a confirmar es más honesto.
 
-## Lo que no entra
+12. **Preguntar cuántos vienen se activa por invitación.** Solo tiene
+   sentido cuando se invita a familias; en una tanda de amigas es un
+   campo de más. Y es texto libre, no un número: «2 adultos y 1 bebé»
+   dice más que un 3, que es justo lo que se quiere saber para calcular
+   lugar y comida.
 
-- **Cuántos acompañantes trae cada uno.** No se pidió. Si hace falta
-  para calcular comida, se agrega después con un campo numérico.
+## Lo que no entra
 - **Reusar una invitación como plantilla de otra.** Con dos o tres
   eventos, copiar los campos a mano cuesta menos que la pantalla que
   haría falta.

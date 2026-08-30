@@ -14,6 +14,7 @@ export interface RsvpLocal {
   token: string
   nombre: string
   asistira: boolean
+  cantidad: string
   comentario: string
 }
 

@@ -12,6 +12,7 @@ interface DatosEvento {
   texto: string | null
   aviso: string | null
   imagen_url: string | null
+  pide_cantidad: boolean
 }
 
 // Los datos llegan desde la página, que ya los pidió con el token: así
@@ -43,6 +44,7 @@ const lamina = computed(() => props.evento.imagen_url || LAMINA_POR_DEFECTO)
 
 const nombre = ref('')
 const asistira = ref<'SI' | 'NO'>('SI')
+const cantidad = ref('')
 const comentario = ref('')
 const enviando = ref(false)
 const laminaOk = ref(true)
@@ -57,6 +59,7 @@ async function enviar() {
   const datos = {
     nombre: nombre.value.trim(),
     asistira: asistira.value === 'SI',
+    cantidad: cantidad.value.trim() || null,
     comentario: comentario.value.trim() || null,
   }
   const previa = respuesta.value
@@ -69,7 +72,12 @@ async function enviar() {
         baseURL: runtime.public.apiBase,
         body: datos,
       })
-      guardar(props.token, { ...previa, ...datos, comentario: datos.comentario ?? '' })
+      guardar(props.token, {
+        ...previa,
+        ...datos,
+        cantidad: datos.cantidad ?? '',
+        comentario: datos.comentario ?? '',
+      })
     } else {
       const creada = await $fetch<{ token_edicion: string }>(
         `/i/${props.token}/rsvp`,
@@ -79,6 +87,7 @@ async function enviar() {
         token: creada.token_edicion,
         nombre: datos.nombre,
         asistira: datos.asistira,
+        cantidad: datos.cantidad ?? '',
         comentario: datos.comentario ?? '',
       })
     }
@@ -112,6 +121,7 @@ async function enviar() {
 function volverAResponder() {
   nombre.value = respuesta.value?.nombre ?? ''
   asistira.value = respuesta.value?.asistira === false ? 'NO' : 'SI'
+  cantidad.value = respuesta.value?.cantidad ?? ''
   comentario.value = respuesta.value?.comentario ?? ''
   editando.value = true
 }
@@ -202,11 +212,14 @@ function volverAResponder() {
               ]"
             />
           </UFormGroup>
+          <UFormGroup v-if="evento.pide_cantidad" label="¿Cuántos vienen?">
+            <UInput v-model="cantidad" placeholder="2 adultos y 1 bebé" />
+          </UFormGroup>
           <UFormGroup label="Comentarios para Julia">
             <UTextarea
               v-model="comentario"
               :rows="3"
-              placeholder="Un mensaje para cuando sepa leer…"
+              placeholder="Un mensaje que te gustaría compartir con Julia y sus papás"
             />
           </UFormGroup>
           <UButton

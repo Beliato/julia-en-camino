@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, String
+from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -33,6 +33,10 @@ class Invitacion(Base):
     hora: Mapped[str | None] = mapped_column(String(100), nullable=True)
     texto: Mapped[str | None] = mapped_column(String(500), nullable=True)
     aviso: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    # Si se pregunta cuántos vienen. Solo tiene sentido cuando se invita
+    # a familias; en una tanda de amigas es un campo de más.
+    pide_cantidad: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Lámina propia. Si está vacía se usa la que viene con la app: sirve
     # para el caso más común, varias tandas del mismo baby shower.

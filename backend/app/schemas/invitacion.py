@@ -21,7 +21,7 @@ class InvitacionBase(BaseModel):
 
 
 class InvitacionCreate(InvitacionBase):
-    pass
+    pide_cantidad: bool = False
 
 
 class InvitacionUpdate(BaseModel):
@@ -33,6 +33,7 @@ class InvitacionUpdate(BaseModel):
     hora: str | None = Field(default=None, max_length=100)
     texto: str | None = Field(default=None, max_length=500)
     aviso: str | None = Field(default=None, max_length=500)
+    pide_cantidad: bool | None = None
 
 
 class InvitacionAdminOut(BaseModel):
@@ -47,6 +48,7 @@ class InvitacionAdminOut(BaseModel):
     texto: str | None = None
     aviso: str | None = None
     imagen_url: str | None = None
+    pide_cantidad: bool = False
     asisten: int = 0
     no_asisten: int = 0
     created_at: datetime
@@ -65,3 +67,4 @@ class InvitacionPublicaOut(BaseModel):
     texto: str | None = None
     aviso: str | None = None
     imagen_url: str | None = None
+    pide_cantidad: bool = False

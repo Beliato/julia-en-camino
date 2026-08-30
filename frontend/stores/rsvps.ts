@@ -5,6 +5,7 @@ export interface Rsvp {
   invitacion_id: number
   nombre: string
   asistira: boolean
+  cantidad: string | null
   comentario: string | null
   created_at: string
 }

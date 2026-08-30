@@ -10,13 +10,17 @@ export interface Invitacion {
   texto: string | null
   aviso: string | null
   imagen_url: string | null
+  pide_cantidad: boolean
   asisten: number
   no_asisten: number
   created_at: string
 }
 
 export type CamposInvitacion = Partial<
-  Pick<Invitacion, 'titulo' | 'lugar' | 'fecha' | 'hora' | 'texto' | 'aviso'>
+  Pick<
+    Invitacion,
+    'titulo' | 'lugar' | 'fecha' | 'hora' | 'texto' | 'aviso' | 'pide_cantidad'
+  >
 >
 
 export const useInvitacionesStore = defineStore('invitaciones', {

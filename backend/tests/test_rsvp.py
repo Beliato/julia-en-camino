@@ -304,3 +304,65 @@ class TestCambiarLaPropiaRespuesta:
             f"/i/{_token(db)}/rsvp/{creada['token_edicion']}", json={"nombre": "  "}
         )
         assert r.status_code == 422
+
+
+class TestCuantosVienen:
+    def test_por_defecto_no_se_pregunta(self, client, auth_headers):
+        inv = client.post(
+            "/invitaciones", json={"titulo": "Amigas"}, headers=auth_headers
+        ).json()
+        assert inv["pide_cantidad"] is False
+        assert client.get(f"/i/{inv['token']}").json()["pide_cantidad"] is False
+
+    def test_se_puede_activar_por_invitacion(self, client, auth_headers):
+        inv = client.post(
+            "/invitaciones", json={"titulo": "Familias"}, headers=auth_headers
+        ).json()
+        client.patch(
+            f"/invitaciones/{inv['id']}",
+            json={"pide_cantidad": True},
+            headers=auth_headers,
+        )
+        assert client.get(f"/i/{inv['token']}").json()["pide_cantidad"] is True
+
+    def test_se_puede_volver_a_desactivar(self, client, auth_headers):
+        inv = client.post(
+            "/invitaciones",
+            json={"titulo": "Cambia", "pide_cantidad": True},
+            headers=auth_headers,
+        ).json()
+        client.patch(
+            f"/invitaciones/{inv['id']}",
+            json={"pide_cantidad": False},
+            headers=auth_headers,
+        )
+        assert client.get(f"/i/{inv['token']}").json()["pide_cantidad"] is False
+
+    def test_se_guarda_como_texto_libre(self, client, db):
+        r = client.post(
+            f"/i/{_token(db)}/rsvp",
+            json={
+                "nombre": "Familia Solano",
+                "asistira": True,
+                "cantidad": "2 adultos y 1 bebé",
+            },
+        )
+        assert r.status_code == 201
+        assert r.json()["cantidad"] == "2 adultos y 1 bebé"
+
+    def test_es_opcional(self, client, db):
+        r = client.post(
+            f"/i/{_token(db)}/rsvp", json={"nombre": "Sola", "asistira": True}
+        )
+        assert r.json()["cantidad"] is None
+
+    def test_se_puede_corregir_al_cambiar_la_respuesta(self, client, db):
+        creada = client.post(
+            f"/i/{_token(db)}/rsvp",
+            json={"nombre": "Ana", "asistira": True, "cantidad": "2"},
+        ).json()
+        r = client.patch(
+            f"/i/{_token(db)}/rsvp/{creada['token_edicion']}",
+            json={"cantidad": "3, se suma mi hermana"},
+        )
+        assert r.json()["cantidad"] == "3, se suma mi hermana"
