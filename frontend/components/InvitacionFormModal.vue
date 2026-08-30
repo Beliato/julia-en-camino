@@ -15,6 +15,7 @@ const f = reactive({
   hora: props.invitacion.hora ?? '',
   texto: props.invitacion.texto ?? '',
   aviso: props.invitacion.aviso ?? '',
+  pideCantidad: props.invitacion.pide_cantidad,
 })
 const guardando = ref(false)
 const subiendo = ref(false)
@@ -33,6 +34,7 @@ async function guardar() {
       hora: f.hora.trim(),
       texto: f.texto.trim(),
       aviso: f.aviso.trim(),
+      pide_cantidad: f.pideCantidad,
     })
     toast.add({ title: 'Invitación actualizada', color: 'green' })
     emit('close')
@@ -119,6 +121,12 @@ async function quitarImagen() {
             placeholder="Confirmá tu asistencia antes del 7 de noviembre, en el siguiente formulario o con los papás de Julia por WhatsApp"
           />
         </UFormGroup>
+
+        <UCheckbox
+          v-model="f.pideCantidad"
+          label="Preguntar cuántos vienen"
+          help="Para cuando se invita a familias. Es un campo de texto: «2 adultos y 1 bebé»."
+        />
 
         <UFormGroup
           label="Lámina"

@@ -22,6 +22,7 @@ interface InvitacionApi {
   texto: string | null
   aviso: string | null
   imagen_url: string | null
+  pide_cantidad: boolean
 }
 
 const datos = ref<InvitacionApi | null>(null)

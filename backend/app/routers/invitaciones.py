@@ -80,10 +80,12 @@ def editar(
     for campo, valor in body.model_dump(exclude_unset=True).items():
         if valor is None:
             continue
-        limpio = valor.strip()
+        if isinstance(valor, bool):
+            setattr(inv, campo, valor)
+            continue
         # Vacío borra el dato; el título no puede quedar vacío porque el
         # schema ya exige al menos un carácter.
-        setattr(inv, campo, limpio or None)
+        setattr(inv, campo, valor.strip() or None)
     db.commit()
     db.refresh(inv)
     return _con_totales(inv)
@@ -204,4 +206,5 @@ def ver_invitacion(request: Request, token: str, db: Session = Depends(get_db)):
         texto=inv.texto,
         aviso=inv.aviso,
         imagen_url=inv.imagen_url,
+        pide_cantidad=inv.pide_cantidad,
     )

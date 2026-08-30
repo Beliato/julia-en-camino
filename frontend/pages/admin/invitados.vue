@@ -203,6 +203,12 @@ function cuando(iso: string) {
               />
             </div>
             <p
+              v-if="r.cantidad"
+              class="mt-1 text-xs text-neutral-500 dark:text-neutral-400"
+            >
+              Vienen: {{ r.cantidad }}
+            </p>
+            <p
               v-if="r.comentario"
               class="mt-1 rounded-lg bg-pink-50 p-2 text-sm italic text-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
             >
