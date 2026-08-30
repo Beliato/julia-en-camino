@@ -206,7 +206,7 @@ function volverAResponder() {
             <UTextarea
               v-model="comentario"
               :rows="3"
-              placeholder="Un mensaje para cuando sepa leer…"
+              placeholder="Un mensaje que te gustaría compartir con Julia y sus papás"
             />
           </UFormGroup>
           <UButton
