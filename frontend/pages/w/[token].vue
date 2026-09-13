@@ -184,7 +184,7 @@ async function deshacer(itemId: number) {
       </p>
     </header>
 
-    <main class="mx-auto max-w-5xl p-4 sm:p-6">
+    <main id="contenido" class="mx-auto max-w-5xl p-4 sm:p-6">
       <div v-if="cargando" class="py-20 text-center">
         <UIcon name="i-heroicons-heart" class="h-8 w-8 animate-pulse text-pink-400" />
       </div>

@@ -41,7 +41,7 @@ const logoOk = ref(true)
         <slot name="header-extra" />
       </div>
     </header>
-    <main class="mx-auto max-w-5xl p-4 sm:p-6">
+    <main id="contenido" class="mx-auto max-w-5xl p-4 sm:p-6">
       <slot />
     </main>
   </div>
