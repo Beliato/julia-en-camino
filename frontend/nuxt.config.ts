@@ -2,6 +2,14 @@
 // Vitest, así que se excluye al correr los tests.
 const enTests = !!process.env.VITEST
 
+// El preview de los links necesita URLs absolutas: las relativas no las
+// resuelve el robot de WhatsApp.
+const SEO = {
+  sitio: process.env.NUXT_PUBLIC_SITE_URL || 'https://julia-en-camino.vercel.app',
+  titulo: 'Julia en Camino',
+  descripcion: 'Estamos esperando a Julia. Acá está lo que nos hace falta.',
+}
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
@@ -53,8 +61,25 @@ export default defineNuxtConfig({
   app: {
     head: {
       htmlAttrs: { lang: 'es' },
+      // Los links se comparten por WhatsApp, así que el preview importa
+      // tanto como la página. Van fijos y no derivados de lo que se
+      // carga en el cliente: el robot que arma el preview no ejecuta JS,
+      // solo lee el HTML que sale del servidor.
       meta: [
-        { name: 'description', content: 'Julia en Camino — catálogo y wishlist para bebé' },
+        { name: 'description', content: SEO.descripcion },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:site_name', content: SEO.titulo },
+        { property: 'og:title', content: SEO.titulo },
+        { property: 'og:description', content: SEO.descripcion },
+        { property: 'og:image', content: `${SEO.sitio}/og-julia.jpg` },
+        { property: 'og:image:width', content: '1200' },
+        { property: 'og:image:height', content: '630' },
+        { property: 'og:image:alt', content: 'El monograma de Julia entre flores' },
+        { property: 'og:locale', content: 'es_ES' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: SEO.titulo },
+        { name: 'twitter:description', content: SEO.descripcion },
+        { name: 'twitter:image', content: `${SEO.sitio}/og-julia.jpg` },
       ],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/icon.svg' },
@@ -66,6 +91,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000',
+      siteUrl: SEO.sitio,
     },
   },
 

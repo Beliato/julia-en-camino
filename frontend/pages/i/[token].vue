@@ -64,7 +64,7 @@ useHead(() => ({ title: datos.value?.nombre_app ?? 'Julia en Camino' }))
       </h1>
     </header>
 
-    <main class="mx-auto max-w-2xl px-4 pb-16">
+    <main id="contenido" class="mx-auto max-w-2xl px-4 pb-16">
       <div v-if="cargando" class="py-16 text-center">
         <UIcon
           name="i-heroicons-heart"
