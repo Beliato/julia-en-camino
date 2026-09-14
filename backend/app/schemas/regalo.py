@@ -32,8 +32,12 @@ class RegaloCreate(BaseModel):
     def validar(self) -> "RegaloCreate":
         if (self.item_id is None) == (self.item_nuevo is None):
             raise ValueError("Indicá item_id o item_nuevo, pero no ambos")
-        if self.origen == OrigenRegalo.REGALO and not self.persona.strip():
-            raise ValueError("Un regalo necesita el nombre de quien lo regaló")
+        if (
+            self.origen in (OrigenRegalo.REGALO, OrigenRegalo.PRESTADO)
+            and not self.persona.strip()
+        ):
+            quien = "regaló" if self.origen == OrigenRegalo.REGALO else "prestó"
+            raise ValueError(f"Hace falta el nombre de quien lo {quien}")
         return self
 
 

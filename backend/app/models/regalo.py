@@ -20,6 +20,9 @@ from app.core.database import Base
 class OrigenRegalo(str, enum.Enum):
     REGALO = "REGALO"
     NOSOTROS = "NOSOTROS"
+    # Prestado: como el regalo, necesita saber de quién vino, porque hay
+    # que devolvérselo.
+    PRESTADO = "PRESTADO"
 
 
 class Regalo(Base):

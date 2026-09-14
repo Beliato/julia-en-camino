@@ -1,8 +1,18 @@
 export type EstadoItem = 'NECESITADO' | 'RESERVADO' | 'ADQUIRIDO'
-export type OrigenAdquisicion = 'NOSOTROS' | 'REGALO'
+export type OrigenAdquisicion = 'NOSOTROS' | 'REGALO' | 'PRESTADO'
 export type Prioridad = 'URGENTE' | 'NORMAL' | 'PUEDE_ESPERAR'
 export type RangoPrecio = 'BAJO' | 'MEDIO' | 'ALTO'
-export type OrigenRegalo = 'REGALO' | 'NOSOTROS'
+export type OrigenRegalo = 'REGALO' | 'NOSOTROS' | 'PRESTADO'
+
+/** Los orígenes que necesitan saber de quién vino el objeto. En el
+ *  préstamo importa todavía más que en el regalo: hay que devolverlo. */
+export const ORIGENES_CON_PERSONA: OrigenRegalo[] = ['REGALO', 'PRESTADO']
+
+export const ORIGEN_LABEL: Record<OrigenRegalo, string> = {
+  REGALO: 'Nos lo regalaron',
+  NOSOTROS: 'Lo compramos nosotros',
+  PRESTADO: 'Nos lo prestaron',
+}
 export type Etapa =
   | 'CUALQUIERA'
   | 'RECIEN_NACIDO'
