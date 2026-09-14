@@ -33,16 +33,31 @@ def upgrade() -> None:
     op.execute("ALTER TYPE origenadquisicion ADD VALUE IF NOT EXISTS 'PRESTADO'")
 
 
-def _rehacer_enum(tipo: str, valores: list[str], usos: list[tuple[str, str]]) -> None:
-    """Reconstruye un enum sin PRESTADO, moviendo las columnas que lo usan."""
+def _rehacer_enum(
+    tipo: str, valores: list[str], usos: list[tuple[str, str, str | None]]
+) -> None:
+    """Reconstruye un enum sin PRESTADO, moviendo las columnas que lo usan.
+
+    El DEFAULT de la columna hay que sacarlo antes y reponerlo despues:
+    quedaria apuntando al tipo viejo y Postgres no lo castea solo
+    ("default for column ... cannot be cast automatically"). Se descubrio
+    corriendo el downgrade de verdad, no leyendo el codigo.
+    """
     etiquetas = ", ".join(f"'{v}'" for v in valores)
     op.execute(f"ALTER TYPE {tipo} RENAME TO {tipo}_viejo")
     op.execute(f"CREATE TYPE {tipo} AS ENUM ({etiquetas})")
-    for tabla, columna in usos:
+    for tabla, columna, default in usos:
+        if default:
+            op.execute(f"ALTER TABLE {tabla} ALTER COLUMN {columna} DROP DEFAULT")
         op.execute(
             f"ALTER TABLE {tabla} ALTER COLUMN {columna} "
             f"TYPE {tipo} USING {columna}::text::{tipo}"
         )
+        if default:
+            op.execute(
+                f"ALTER TABLE {tabla} ALTER COLUMN {columna} "
+                f"SET DEFAULT '{default}'::{tipo}"
+            )
     op.execute(f"DROP TYPE {tipo}_viejo")
 
 
@@ -59,9 +74,11 @@ def downgrade() -> None:
                 "compra. Resolvelas a mano antes de bajar esta migracion."
             )
 
-    _rehacer_enum("origenregalo", ["REGALO", "NOSOTROS"], [("regalos", "origen")])
+    _rehacer_enum(
+        "origenregalo", ["REGALO", "NOSOTROS"], [("regalos", "origen", "REGALO")]
+    )
     _rehacer_enum(
         "origenadquisicion",
         ["NOSOTROS", "REGALO"],
-        [("items", "origen_adquisicion")],
+        [("items", "origen_adquisicion", None)],
     )

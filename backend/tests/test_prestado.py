@@ -15,7 +15,7 @@ def _item(db, nombre="Moises", cantidad=1) -> Item:
 class TestMarcarComoPrestado:
     def test_se_puede_marcar_adquirido_como_prestado(self, client, auth_headers, db):
         item = _item(db)
-        r = client.post(
+        r = client.patch(
             f"/items/{item.id}/adquirir",
             json={"origen": "PRESTADO", "gifter_name": "Tia Ana"},
             headers=auth_headers,
@@ -25,7 +25,7 @@ class TestMarcarComoPrestado:
 
     def test_guarda_quien_lo_presto(self, client, auth_headers, db):
         item = _item(db)
-        client.post(
+        client.patch(
             f"/items/{item.id}/adquirir",
             json={"origen": "PRESTADO", "gifter_name": "Tia Ana"},
             headers=auth_headers,
@@ -37,7 +37,7 @@ class TestMarcarComoPrestado:
     def test_cuenta_como_adquirido(self, client, auth_headers, db):
         """Lo prestado tambien resuelve la necesidad: no hay que comprarlo."""
         item = _item(db)
-        r = client.post(
+        r = client.patch(
             f"/items/{item.id}/adquirir",
             json={"origen": "PRESTADO", "gifter_name": "Ana"},
             headers=auth_headers,
