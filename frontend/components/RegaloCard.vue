@@ -91,7 +91,8 @@ async function borrar() {
           v-if="props.mostrarPersona !== false && props.regalo.persona"
           class="text-sm text-pink-700 dark:text-pink-300"
         >
-          de {{ props.regalo.persona }}
+          {{ props.regalo.origen === 'PRESTADO' ? 'prestado por' : 'de' }}
+          {{ props.regalo.persona }}
         </p>
         <p v-else-if="!props.regalo.persona" class="text-sm text-gray-500">
           Lo compramos nosotros

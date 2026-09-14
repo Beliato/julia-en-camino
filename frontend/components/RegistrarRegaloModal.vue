@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Etapa, Item, OrigenRegalo } from '~/types/api'
-import { ETAPAS, ETAPA_LABEL } from '~/types/api'
+import { ETAPAS, ETAPA_LABEL, ORIGENES_CON_PERSONA } from '~/types/api'
 
 const emit = defineEmits<{ close: []; done: [] }>()
 
@@ -26,6 +26,7 @@ const creandoCategoria = ref(false)
 const categoriaId = ref<number>(SIN_CATEGORIA)
 
 const origen = ref<OrigenRegalo>('REGALO')
+const llevaPersona = computed(() => ORIGENES_CON_PERSONA.includes(origen.value))
 const persona = ref('')
 const cantidad = ref(1)
 const fecha = ref(new Date().toISOString().slice(0, 10))
@@ -71,7 +72,7 @@ const puedeGuardar = computed(() => {
   const objetoOk = modoNuevo.value
     ? !!nombreNuevo.value.trim()
     : itemId.value !== SIN_ITEM
-  const personaOk = origen.value === 'NOSOTROS' || !!persona.value.trim()
+  const personaOk = !llevaPersona.value || !!persona.value.trim()
   return objetoOk && personaOk
 })
 
@@ -107,18 +108,20 @@ async function guardar() {
             },
           }
         : { item_id: itemId.value }),
-      persona: origen.value === 'REGALO' ? persona.value.trim() : '',
+      persona: llevaPersona.value ? persona.value.trim() : '',
       origen: origen.value,
       cantidad: cantidad.value,
       fecha: fecha.value,
       nota: nota.value.trim() || null,
     })
+    const avisos: Record<OrigenRegalo, string> = {
+      REGALO: `Gracias a ${persona.value.trim()} quedó registrado.`,
+      PRESTADO: `Anotado como prestado por ${persona.value.trim()}.`,
+      NOSOTROS: 'Quedó registrado como comprado por ustedes.',
+    }
     toast.add({
-      title: '¡Anotado! 🎁',
-      description:
-        origen.value === 'REGALO'
-          ? `Gracias a ${persona.value.trim()} quedó registrado.`
-          : 'Quedó registrado como comprado por ustedes.',
+      title: origen.value === 'PRESTADO' ? 'Anotado 🤝' : '¡Anotado! 🎁',
+      description: avisos[origen.value],
       color: 'pink',
     })
     emit('done')
@@ -226,11 +229,16 @@ async function guardar() {
             :options="[
               { value: 'REGALO', label: 'Nos lo regalaron' },
               { value: 'NOSOTROS', label: 'Lo compramos nosotros' },
+              { value: 'PRESTADO', label: 'Nos lo prestaron' },
             ]"
           />
         </UFormGroup>
 
-        <UFormGroup v-if="origen === 'REGALO'" label="¿Quién lo regaló?" required>
+        <UFormGroup
+          v-if="llevaPersona"
+          :label="origen === 'PRESTADO' ? '¿Quién lo prestó?' : '¿Quién lo regaló?'"
+          required
+        >
           <UInput v-model="persona" placeholder="Nombre de la persona" />
           <div v-if="sugerencias.length > 0" class="mt-2 flex flex-wrap gap-1">
             <UButton

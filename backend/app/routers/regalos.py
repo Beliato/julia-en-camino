@@ -155,10 +155,13 @@ def editar_regalo(
     cambios = body.model_dump(exclude_unset=True)
     if "persona" in cambios and cambios["persona"] is not None:
         cambios["persona"] = cambios["persona"].strip()
-        if not cambios["persona"] and regalo.origen == OrigenRegalo.REGALO:
+        if not cambios["persona"] and regalo.origen in (
+            OrigenRegalo.REGALO,
+            OrigenRegalo.PRESTADO,
+        ):
             raise HTTPException(
                 status_code=422,
-                detail="Un regalo necesita el nombre de quien lo regaló",
+                detail="Hace falta el nombre de quien lo dio",
             )
     for campo, valor in cambios.items():
         setattr(regalo, campo, valor)

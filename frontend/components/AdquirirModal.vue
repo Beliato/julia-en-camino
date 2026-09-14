@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { Item } from '~/types/api'
+import type { Item, OrigenRegalo } from '~/types/api'
+import { ORIGENES_CON_PERSONA } from '~/types/api'
 
 const props = defineProps<{ item: Item }>()
 const emit = defineEmits<{ close: []; done: [] }>()
@@ -7,7 +8,8 @@ const emit = defineEmits<{ close: []; done: [] }>()
 const items = useItemsStore()
 const toast = useToast()
 
-const origen = ref<'NOSOTROS' | 'REGALO'>('NOSOTROS')
+const origen = ref<OrigenRegalo>('NOSOTROS')
+const llevaPersona = computed(() => ORIGENES_CON_PERSONA.includes(origen.value))
 const gifterName = ref('')
 const guardando = ref(false)
 
@@ -21,7 +23,7 @@ async function confirmar() {
     await items.adquirir(
       props.item.id,
       origen.value,
-      origen.value === 'REGALO' ? gifterName.value.trim() || null : null,
+      llevaPersona.value ? gifterName.value.trim() || null : null,
     )
     emit('done')
     emit('close')
@@ -62,11 +64,15 @@ async function confirmar() {
             :options="[
               { value: 'NOSOTROS', label: 'Lo compramos nosotros' },
               { value: 'REGALO', label: 'Fue un regalo' },
+              { value: 'PRESTADO', label: 'Nos lo prestaron' },
             ]"
           />
         </UFormGroup>
 
-        <UFormGroup v-if="origen === 'REGALO'" label="¿Quién lo regaló?">
+        <UFormGroup
+          v-if="llevaPersona"
+          :label="origen === 'PRESTADO' ? '¿Quién lo prestó?' : '¿Quién lo regaló?'"
+        >
           <UInput v-model="gifterName" placeholder="Nombre de la persona" />
         </UFormGroup>
 

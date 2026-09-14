@@ -61,15 +61,19 @@ def recalcular_recibidas(db: Session, item: Item) -> None:
     if item.cantidad_recibida == 0:
         item.origen_adquisicion = None
     else:
-        hubo_regalo = (
-            db.query(Regalo)
-            .filter(Regalo.item_id == item.id, Regalo.origen == OrigenRegalo.REGALO)
-            .first()
-            is not None
-        )
-        item.origen_adquisicion = (
-            OrigenAdquisicion.REGALO if hubo_regalo else OrigenAdquisicion.NOSOTROS
-        )
+        # Con varias unidades de orígenes distintos gana el regalo: es lo
+        # más definitivo que le pudo pasar al item. El préstamo va después
+        # porque es temporal, y comprado queda de piso.
+        origenes = {
+            o
+            for (o,) in db.query(Regalo.origen).filter(Regalo.item_id == item.id).all()
+        }
+        if OrigenRegalo.REGALO in origenes:
+            item.origen_adquisicion = OrigenAdquisicion.REGALO
+        elif OrigenRegalo.PRESTADO in origenes:
+            item.origen_adquisicion = OrigenAdquisicion.PRESTADO
+        else:
+            item.origen_adquisicion = OrigenAdquisicion.NOSOTROS
 
 
 def recalcular_estado(db: Session, item: Item) -> None:

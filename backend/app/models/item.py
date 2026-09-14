@@ -23,6 +23,10 @@ class EstadoItem(str, enum.Enum):
 class OrigenAdquisicion(str, enum.Enum):
     NOSOTROS = "NOSOTROS"
     REGALO = "REGALO"
+    # Prestado por alguien: resuelve la necesidad igual que lo demás, así
+    # que cuenta como adquirido, pero el objeto no es de ellos y en algún
+    # momento hay que devolverlo.
+    PRESTADO = "PRESTADO"
 
 
 class Prioridad(str, enum.Enum):

@@ -9,7 +9,7 @@ from app.core.database import get_db
 from app.core.deps import get_current_admin
 from app.models.admin import Admin
 from app.models.categoria import Categoria
-from app.models.item import EstadoItem, Etapa, Item, OrigenAdquisicion
+from app.models.item import EstadoItem, Etapa, Item
 from app.models.regalo import OrigenRegalo, Regalo
 from app.models.reserva import Reserva
 from app.schemas.item import (
@@ -291,12 +291,15 @@ def adquirir_item(
         )
 
     faltantes = item.cantidad - item.cantidad_recibida
-    es_regalo = body.origen == OrigenAdquisicion.REGALO
+    # Regalo y préstamo necesitan saber de quién vino; lo comprado, no.
+    # En el préstamo la persona importa todavía más: hay que devolvérselo.
+    origen_regalo = OrigenRegalo[body.origen.value]
+    lleva_persona = origen_regalo in (OrigenRegalo.REGALO, OrigenRegalo.PRESTADO)
     db.add(
         Regalo(
             item_id=item.id,
-            persona=(body.gifter_name or "").strip() if es_regalo else "",
-            origen=OrigenRegalo.REGALO if es_regalo else OrigenRegalo.NOSOTROS,
+            persona=(body.gifter_name or "").strip() if lleva_persona else "",
+            origen=origen_regalo,
             cantidad=faltantes,
             fecha=datetime.now(UTC).date(),
         )
