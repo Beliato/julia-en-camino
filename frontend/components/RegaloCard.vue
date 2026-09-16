@@ -18,18 +18,35 @@ const trabajando = ref(false)
 const confirmarBorrado = ref(false)
 const editando = ref(false)
 
-const fechaLegible = computed(() =>
-  new Date(`${props.regalo.fecha}T00:00:00`).toLocaleDateString('es', {
+function legible(fecha: string) {
+  return new Date(`${fecha}T00:00:00`).toLocaleDateString('es', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-  }),
-)
+  })
+}
+
+const fechaLegible = computed(() => legible(props.regalo.fecha))
+
+const esPrestamo = computed(() => props.regalo.origen === 'PRESTADO')
+const devuelto = computed(() => props.regalo.devuelto_en !== null)
 
 async function alternarAgradecido() {
   trabajando.value = true
   try {
     await regalos.marcarAgradecido(props.regalo.id, !props.regalo.agradecido)
+    emit('cambio')
+  } catch {
+    toast.add({ title: 'No se pudo actualizar', color: 'red' })
+  } finally {
+    trabajando.value = false
+  }
+}
+
+async function alternarDevuelto() {
+  trabajando.value = true
+  try {
+    await regalos.marcarDevuelto(props.regalo.id, !devuelto.value)
     emit('cambio')
   } catch {
     toast.add({ title: 'No se pudo actualizar', color: 'red' })
@@ -140,6 +157,18 @@ async function borrar() {
       >
         {{ props.regalo.agradecido ? 'Agradecido' : 'Falta agradecer' }}
       </UBadge>
+      <UBadge
+        v-if="esPrestamo"
+        :color="devuelto ? 'gray' : 'blue'"
+        variant="subtle"
+        size="xs"
+      >
+        {{
+          devuelto
+            ? `Devuelto el ${legible(props.regalo.devuelto_en!)}`
+            : 'Sin devolver'
+        }}
+      </UBadge>
     </div>
 
     <!-- Fotos de Julia usando el regalo, para mandarle a quien lo dio -->
@@ -176,6 +205,16 @@ async function borrar() {
         @click="alternarAgradecido"
       >
         {{ props.regalo.agradecido ? 'Desmarcar' : 'Ya agradecí' }}
+      </UButton>
+      <UButton
+        v-if="esPrestamo"
+        size="xs"
+        :variant="devuelto ? 'ghost' : 'solid'"
+        :color="devuelto ? 'gray' : 'blue'"
+        :loading="trabajando"
+        @click="alternarDevuelto"
+      >
+        {{ devuelto ? 'Aún no lo devolvimos' : 'Ya lo devolvimos' }}
       </UButton>
     </div>
 

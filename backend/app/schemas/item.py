@@ -102,6 +102,9 @@ class ItemOut(BaseModel):
     etapa: Etapa
     estado: EstadoItem
     origen_adquisicion: OrigenAdquisicion | None = None
+    # Préstamos de este objeto que siguen sin devolver. Distingue "nos lo
+    # prestaron y lo tenemos" de "ya lo devolvimos".
+    prestamos_pendientes: int = 0
     personas: list[str] = []
     caja: CajaOut | None = None
     fotos: list[FotoItemOut] = []

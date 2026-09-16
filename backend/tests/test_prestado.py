@@ -119,6 +119,83 @@ class TestOrigenDerivado:
         assert item.origen_adquisicion == OrigenAdquisicion.PRESTADO
 
 
+class TestDevolucion:
+    def _leer_item(self, client, auth_headers, item_id):
+        """No hay GET /items/{id}: el admin siempre trae el catalogo entero."""
+        catalogo = client.get("/items", headers=auth_headers).json()
+        return next(i for i in catalogo if i["id"] == item_id)
+
+    def _prestamo(self, client, auth_headers, db, persona="Tia Ana"):
+        item = _item(db)
+        return item, client.post(
+            "/regalos",
+            json={"item_id": item.id, "persona": persona, "origen": "PRESTADO"},
+            headers=auth_headers,
+        ).json()
+
+    def test_marcar_devuelto_guarda_la_fecha(self, client, auth_headers, db):
+        _, prestamo = self._prestamo(client, auth_headers, db)
+        r = client.post(f"/regalos/{prestamo['id']}/devolucion", headers=auth_headers)
+        assert r.status_code == 200
+        assert r.json()["devuelto_en"] is not None
+
+    def test_acepta_una_fecha_explicita(self, client, auth_headers, db):
+        """Se puede marcar despues, poniendo el dia en que se entrego."""
+        _, prestamo = self._prestamo(client, auth_headers, db)
+        r = client.post(
+            f"/regalos/{prestamo['id']}/devolucion",
+            json={"devuelto_en": "2026-09-01"},
+            headers=auth_headers,
+        )
+        assert r.json()["devuelto_en"] == "2026-09-01"
+
+    def test_se_puede_deshacer(self, client, auth_headers, db):
+        _, prestamo = self._prestamo(client, auth_headers, db)
+        client.post(f"/regalos/{prestamo['id']}/devolucion", headers=auth_headers)
+        r = client.delete(f"/regalos/{prestamo['id']}/devolucion", headers=auth_headers)
+        assert r.status_code == 200
+        assert r.json()["devuelto_en"] is None
+
+    def test_no_se_devuelve_un_regalo(self, client, auth_headers, db):
+        """Devolver solo aplica a lo prestado; un regalo es definitivo."""
+        item = _item(db)
+        regalo = client.post(
+            "/regalos",
+            json={"item_id": item.id, "persona": "Beto", "origen": "REGALO"},
+            headers=auth_headers,
+        ).json()
+        r = client.post(f"/regalos/{regalo['id']}/devolucion", headers=auth_headers)
+        assert r.status_code == 422
+
+    def test_devolver_no_revive_la_necesidad(self, client, auth_headers, db):
+        """El objeto ya cumplio su funcion: revivirlo lo publicaria otra vez
+        en la lista publica, donde alguien podria comprarlo al pedo."""
+        item, prestamo = self._prestamo(client, auth_headers, db)
+        client.post(f"/regalos/{prestamo['id']}/devolucion", headers=auth_headers)
+        leido = self._leer_item(client, auth_headers, item.id)
+        assert leido["estado"] == "ADQUIRIDO"
+        assert leido["cantidad_recibida"] == 1
+
+    def test_pendientes_baja_al_devolver(self, client, auth_headers, db):
+        item, prestamo = self._prestamo(client, auth_headers, db)
+        antes = self._leer_item(client, auth_headers, item.id)
+        assert antes["prestamos_pendientes"] == 1
+
+        client.post(f"/regalos/{prestamo['id']}/devolucion", headers=auth_headers)
+        despues = self._leer_item(client, auth_headers, item.id)
+        assert despues["prestamos_pendientes"] == 0
+
+    def test_lo_regalado_nunca_cuenta_como_pendiente(self, client, auth_headers, db):
+        item = _item(db)
+        client.post(
+            "/regalos",
+            json={"item_id": item.id, "persona": "Beto", "origen": "REGALO"},
+            headers=auth_headers,
+        )
+        leido = self._leer_item(client, auth_headers, item.id)
+        assert leido["prestamos_pendientes"] == 0
+
+
 class TestNoEsUnRegalo:
     def test_lo_prestado_no_va_al_muro_de_agradecimiento(
         self, client, auth_headers, db

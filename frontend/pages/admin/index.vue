@@ -28,6 +28,15 @@ const filtroEtapa = ref<Etapa | 'TODAS'>('TODAS')
  * categoría, que de otro modo no habría forma de encontrar.
  */
 const filtroCategoria = ref<string>('TODAS')
+/** Origen es un eje distinto del estado: algo puede estar adquirido y
+ *  además ser prestado. Por eso va en su propio control y no como una
+ *  opción más de la fila de estados, que es excluyente.
+ *
+ *  'PRESTADO_PENDIENTE' es el caso que de verdad importa revisar: lo que
+ *  todavía hay que devolver. */
+const filtroOrigen = ref<
+  'TODOS' | 'PRESTADO' | 'PRESTADO_PENDIENTE' | 'REGALO' | 'NOSOTROS'
+>('TODOS')
 const modalRegistrar = ref(false)
 
 const busqueda = ref('')
@@ -72,12 +81,21 @@ function coincideCategoria(item: Item): boolean {
   return String(item.categoria?.id) === filtroCategoria.value
 }
 
+function coincideOrigen(item: Item): boolean {
+  if (filtroOrigen.value === 'TODOS') return true
+  if (filtroOrigen.value === 'PRESTADO_PENDIENTE') {
+    return item.prestamos_pendientes > 0
+  }
+  return item.origen_adquisicion === filtroOrigen.value
+}
+
 const itemsFiltrados = computed(() =>
   items.items.filter(
     (i) =>
       (filtro.value === 'TODOS' || i.estado === filtro.value) &&
       (filtroEtapa.value === 'TODAS' || i.etapa === filtroEtapa.value) &&
-      coincideCategoria(i),
+      coincideCategoria(i) &&
+      coincideOrigen(i),
   ),
 )
 
@@ -85,7 +103,8 @@ const hayFiltrosActivos = computed(
   () =>
     filtro.value !== 'TODOS' ||
     filtroEtapa.value !== 'TODAS' ||
-    filtroCategoria.value !== 'TODAS',
+    filtroCategoria.value !== 'TODAS' ||
+    filtroOrigen.value !== 'TODOS',
 )
 
 const opcionesFiltroCategoria = computed(() => [
@@ -101,6 +120,7 @@ function limpiarFiltros() {
   filtro.value = 'TODOS'
   filtroEtapa.value = 'TODAS'
   filtroCategoria.value = 'TODAS'
+  filtroOrigen.value = 'TODOS'
 }
 
 const badge = {
@@ -406,6 +426,19 @@ function salir() {
             ...ETAPAS.map((e) => ({ value: e, label: ETAPA_LABEL[e] })),
           ]"
         />
+        <USelect
+          v-model="filtroOrigen"
+          size="xs"
+          class="w-52"
+          aria-label="Filtrar por origen"
+          :options="[
+            { value: 'TODOS', label: 'Cualquier origen' },
+            { value: 'PRESTADO', label: 'Prestado' },
+            { value: 'PRESTADO_PENDIENTE', label: 'Prestado sin devolver' },
+            { value: 'REGALO', label: 'Nos lo regalaron' },
+            { value: 'NOSOTROS', label: 'Lo compramos' },
+          ]"
+        />
         <UButton
           v-if="hayFiltrosActivos"
           variant="link"
@@ -536,6 +569,15 @@ function salir() {
           </UBadge>
           <UBadge v-if="item.cantidad > 1" color="blue" variant="subtle">
             {{ item.cantidad_recibida }}/{{ item.cantidad }} recibidos
+          </UBadge>
+          <!-- Lo prestado se avisa solo mientras siga en casa: una vez
+               devuelto deja de ser algo pendiente de hacer. -->
+          <UBadge
+            v-if="item.prestamos_pendientes > 0"
+            color="blue"
+            variant="subtle"
+          >
+            Falta devolver
           </UBadge>
           <UBadge v-if="item.rango_precio" color="gray" variant="subtle">
             {{ RANGO_PRECIO_LABEL[item.rango_precio] }}

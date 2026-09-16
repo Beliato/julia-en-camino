@@ -12,6 +12,7 @@ from app.models.item import Item
 from app.models.regalo import FotoRegalo, OrigenRegalo, Regalo
 from app.schemas.foto import FotoConfirmar, PresignRequest, PresignResponse
 from app.schemas.regalo import (
+    DevolucionCreate,
     FotoRegaloOut,
     RegaloCreate,
     RegaloOut,
@@ -166,6 +167,45 @@ def editar_regalo(
     for campo, valor in cambios.items():
         setattr(regalo, campo, valor)
     recalcular_item(db, regalo.item)
+    db.commit()
+    return _get_regalo_or_404(regalo_id, db)
+
+
+@router.post("/{regalo_id}/devolucion", response_model=RegaloOut)
+def marcar_devuelto(
+    regalo_id: int,
+    body: DevolucionCreate | None = None,
+    db: Session = Depends(get_db),
+    _: Admin = Depends(get_current_admin),
+):
+    """Registra que le devolvimos el objeto a quien lo prestó.
+
+    No libera la unidad ni baja cantidad_recibida: el objeto ya cumplió su
+    función y revivir la necesidad volvería a publicarlo en la lista
+    pública, donde alguien podría comprarlo sin que haga falta.
+    """
+    regalo = _get_regalo_or_404(regalo_id, db)
+    if regalo.origen != OrigenRegalo.PRESTADO:
+        raise HTTPException(
+            status_code=422,
+            detail="Solo se devuelve lo que nos prestaron",
+        )
+    regalo.devuelto_en = (body.devuelto_en if body else None) or datetime.now(
+        UTC
+    ).date()
+    db.commit()
+    return _get_regalo_or_404(regalo_id, db)
+
+
+@router.delete("/{regalo_id}/devolucion", response_model=RegaloOut)
+def deshacer_devolucion(
+    regalo_id: int,
+    db: Session = Depends(get_db),
+    _: Admin = Depends(get_current_admin),
+):
+    """Deshace la marca de devuelto, para cuando se marcó por error."""
+    regalo = _get_regalo_or_404(regalo_id, db)
+    regalo.devuelto_en = None
     db.commit()
     return _get_regalo_or_404(regalo_id, db)
 
