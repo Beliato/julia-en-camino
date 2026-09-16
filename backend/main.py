@@ -23,6 +23,10 @@ app = FastAPI(
     version="0.1.0",
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
+    # Apagar docs y redoc solo esconde las dos interfaces: el esquema
+    # sigue sirviéndose en /openapi.json, que es de donde salen. Sin esta
+    # línea, la superficie completa de la API quedaba pública.
+    openapi_url="/openapi.json" if settings.DEBUG else None,
 )
 
 app.state.limiter = limiter
