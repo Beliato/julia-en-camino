@@ -12,6 +12,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+from app.models.regalo import OrigenRegalo
 
 
 class EstadoItem(str, enum.Enum):
@@ -46,7 +47,11 @@ class Etapa(str, enum.Enum):
     RECIEN_NACIDO = "RECIEN_NACIDO"
     M0_3 = "M0_3"
     M3_6 = "M3_6"
-    M6_12 = "M6_12"
+    # El viejo M6_12 se partió en dos: entre los 6 y los 12 meses el bebé
+    # cambia de talla y de habilidades demasiado como para que una sola
+    # etiqueta sirva al buscar qué sacar de la caja.
+    M6_9 = "M6_9"
+    M9_12 = "M9_12"
     A1_2 = "A1_2"
     A2_MAS = "A2_MAS"
 
@@ -121,6 +126,21 @@ class Item(Base):
             if r.persona and r.persona not in vistos:
                 vistos.append(r.persona)
         return vistos
+
+    @property
+    def prestamos_pendientes(self) -> int:
+        """Cuántos préstamos de este objeto siguen sin devolver.
+
+        Devolver no libera la unidad ni revive la necesidad: el objeto ya
+        cumplió su función y revivirlo lo publicaría de nuevo en la lista
+        pública. Este contador es lo que distingue "nos lo prestaron y lo
+        tenemos" de "ya lo devolvimos".
+        """
+        return sum(
+            1
+            for r in self.regalos
+            if r.origen == OrigenRegalo.PRESTADO and r.devuelto_en is None
+        )
 
     @property
     def reservas_activas(self) -> int:

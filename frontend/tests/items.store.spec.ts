@@ -22,6 +22,7 @@ function item(over: Partial<Item> = {}): Item {
     categoria: null,
     estado: 'NECESITADO',
     origen_adquisicion: null,
+    prestamos_pendientes: 0,
     personas: [],
     etapa: 'CUALQUIERA',
     caja: null,

@@ -18,7 +18,8 @@ export type Etapa =
   | 'RECIEN_NACIDO'
   | 'M0_3'
   | 'M3_6'
-  | 'M6_12'
+  | 'M6_9'
+  | 'M9_12'
   | 'A1_2'
   | 'A2_MAS'
 
@@ -53,6 +54,8 @@ export interface Item {
   etapa: Etapa
   estado: EstadoItem
   origen_adquisicion: OrigenAdquisicion | null
+  /** Préstamos de este objeto que siguen sin devolver. */
+  prestamos_pendientes: number
   personas: string[]
   caja: Caja | null
   fotos: FotoItem[]
@@ -101,6 +104,8 @@ export interface Regalo {
   fecha: string
   nota: string | null
   agradecido: boolean
+  /** Solo en préstamos: con fecha, ya se lo devolvimos a quien lo prestó. */
+  devuelto_en: string | null
   fotos: FotoRegalo[]
 }
 
@@ -166,7 +171,8 @@ export const ETAPA_LABEL: Record<Etapa, string> = {
   RECIEN_NACIDO: 'Recién nacido',
   M0_3: '0-3 meses',
   M3_6: '3-6 meses',
-  M6_12: '6-12 meses',
+  M6_9: '6-9 meses',
+  M9_12: '9-12 meses',
   A1_2: '1-2 años',
   A2_MAS: 'Más de 2 años',
 }
@@ -176,7 +182,8 @@ export const ETAPAS: Etapa[] = [
   'RECIEN_NACIDO',
   'M0_3',
   'M3_6',
-  'M6_12',
+  'M6_9',
+  'M9_12',
   'A1_2',
   'A2_MAS',
 ]

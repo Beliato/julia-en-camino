@@ -93,6 +93,17 @@ export const useRegalosStore = defineStore('regalos', {
     async marcarAgradecido(id: number, agradecido: boolean) {
       return await this.editar(id, { agradecido })
     },
+    /** Marca un préstamo como devuelto, o deshace la marca. La fecha la
+     *  pone el backend cuando no se indica: el caso normal es marcarlo el
+     *  día que se entrega. */
+    async marcarDevuelto(id: number, devuelto: boolean) {
+      const api = useApi()
+      const regalo = await api<Regalo>(`/regalos/${id}/devolucion`, {
+        method: devuelto ? 'POST' : 'DELETE',
+      })
+      this._reemplazar(regalo)
+      return regalo
+    },
     async eliminar(id: number) {
       const api = useApi()
       await api(`/regalos/${id}`, { method: 'DELETE' })

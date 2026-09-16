@@ -51,6 +51,9 @@ class Regalo(Base):
     fecha: Mapped[date] = mapped_column(Date, default=lambda: datetime.now(UTC).date())
     nota: Mapped[str | None] = mapped_column(Text)
     agradecido: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Solo tiene sentido en los préstamos. Nulo mientras el objeto siga en
+    # casa; con fecha, ya volvió a quien lo prestó.
+    devuelto_en: Mapped[date | None] = mapped_column(Date)
     # Solo si llegó por la wishlist: enlaza con la reserva que lo originó.
     reserva_id: Mapped[int | None] = mapped_column(
         ForeignKey("reservas.id", ondelete="SET NULL"), unique=True

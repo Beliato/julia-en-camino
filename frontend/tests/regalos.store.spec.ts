@@ -22,6 +22,7 @@ function regalo(over: Partial<Regalo> = {}): Regalo {
     fecha: '2026-08-15',
     nota: null,
     agradecido: false,
+    devuelto_en: null,
     fotos: [],
     ...over,
   }
@@ -71,6 +72,40 @@ describe('store regalos', () => {
     apiMock.mockResolvedValue(regalo({ id: 1, agradecido: true }))
     await store.marcarAgradecido(1, true)
     expect(store.regalos[0]!.agradecido).toBe(true)
+  })
+
+  it('marcarDevuelto postea la devolución sin mandar fecha', async () => {
+    // La fecha la pone el backend: el caso normal es marcarlo el día que
+    // se entrega el objeto.
+    const store = useRegalosStore()
+    store.regalos = [regalo({ id: 1, origen: 'PRESTADO', devuelto_en: null })]
+    apiMock.mockResolvedValue(
+      regalo({ id: 1, origen: 'PRESTADO', devuelto_en: '2026-09-15' }),
+    )
+
+    await store.marcarDevuelto(1, true)
+
+    expect(apiMock).toHaveBeenCalledWith('/regalos/1/devolucion', {
+      method: 'POST',
+    })
+    expect(store.regalos[0]!.devuelto_en).toBe('2026-09-15')
+  })
+
+  it('marcarDevuelto en false deshace la devolución', async () => {
+    const store = useRegalosStore()
+    store.regalos = [
+      regalo({ id: 1, origen: 'PRESTADO', devuelto_en: '2026-09-15' }),
+    ]
+    apiMock.mockResolvedValue(
+      regalo({ id: 1, origen: 'PRESTADO', devuelto_en: null }),
+    )
+
+    await store.marcarDevuelto(1, false)
+
+    expect(apiMock).toHaveBeenCalledWith('/regalos/1/devolucion', {
+      method: 'DELETE',
+    })
+    expect(store.regalos[0]!.devuelto_en).toBeNull()
   })
 
   it('pendientesDeAgradecer no cuenta las compras propias', () => {

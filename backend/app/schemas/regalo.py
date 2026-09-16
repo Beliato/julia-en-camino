@@ -41,6 +41,13 @@ class RegaloCreate(BaseModel):
         return self
 
 
+class DevolucionCreate(BaseModel):
+    """Fecha de la devolución. Vacío significa hoy, que es el caso normal:
+    se marca en el momento en que se entrega el objeto."""
+
+    devuelto_en: date | None = None
+
+
 class RegaloUpdate(BaseModel):
     persona: str | None = Field(default=None, max_length=255)
     cantidad: int | None = Field(default=None, ge=1, le=99)
@@ -79,6 +86,8 @@ class RegaloOut(BaseModel):
     fecha: date
     nota: str | None = None
     agradecido: bool
+    # Solo en los préstamos: con fecha, ya se lo devolvimos a quien lo prestó.
+    devuelto_en: date | None = None
     fotos: list[FotoRegaloOut] = []
 
     class Config:
