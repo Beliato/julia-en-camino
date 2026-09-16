@@ -178,6 +178,7 @@ async function borrar() {
         :key="foto.id"
         :href="foto.url"
         target="_blank"
+        rel="noopener noreferrer"
         class="group relative h-16 w-16 overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-800"
       >
         <img :src="foto.url" alt="" class="h-full w-full object-cover">

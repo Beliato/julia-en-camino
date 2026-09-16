@@ -598,6 +598,7 @@ function salir() {
             v-if="item.amazon_link"
             :to="item.amazon_link"
             target="_blank"
+            rel="noopener noreferrer"
             class="text-xs text-pink-600 underline dark:text-pink-300"
           >
             Ver en tienda

@@ -88,6 +88,27 @@ export default defineNuxtConfig({
     },
   },
 
+  // Cabeceras defensivas en todas las rutas.
+  //
+  // No hay CSP acá a propósito: Nuxt inyecta el payload de hidratación
+  // como script inline, así que una CSP sin nonces dejaría la app en
+  // blanco. Agregarla requiere configurarlos y probarlo, no una línea.
+  //
+  // Referrer-Policy importa más que de costumbre en este proyecto: el
+  // token de la wishlist va en la ruta (/w/<token>) y desde ahí se sale a
+  // la tienda. El default de los navegadores actuales ya manda solo el
+  // origen, pero acá queda explícito y no a merced del default.
+  routeRules: {
+    '/**': {
+      headers: {
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'DENY',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'Permissions-Policy': 'geolocation=(), microphone=(), interest-cohort=()',
+      },
+    },
+  },
+
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000',

@@ -284,10 +284,16 @@ async function deshacer(itemId: number) {
                 <UButton size="sm" @click="itemReservando = item">
                   Yo lo regalo
                 </UButton>
+                <!-- La tienda es un dominio ajeno: noopener le niega el
+                     acceso a window.opener y noreferrer evita mandarle de
+                     dónde viene la visita, que acá es la URL con el token
+                     de la lista. Los navegadores actuales ya hacen las dos
+                     cosas por default, pero esto no depende del default. -->
                 <ULink
                   v-if="item.amazon_link"
                   :to="item.amazon_link"
                   target="_blank"
+                  rel="noopener noreferrer"
                   class="text-xs text-pink-600 underline dark:text-pink-300"
                 >
                   Ver en tienda
