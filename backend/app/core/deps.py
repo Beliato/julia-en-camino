@@ -19,7 +19,16 @@ def get_current_admin(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido"
         )
-    admin = db.query(Admin).filter(Admin.id == int(payload.get("sub", 0))).first()
+    # `sub` lo escribimos nosotros, pero un token viejo o de otra versión
+    # puede traer algo que no sea un número. Sin esta guarda, int() tira
+    # ValueError y el cliente recibe un 500 en vez del 401 que le
+    # corresponde.
+    sub = str(payload.get("sub", ""))
+    if not sub.isdigit():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido"
+        )
+    admin = db.query(Admin).filter(Admin.id == int(sub)).first()
     if not admin:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Admin no encontrado"

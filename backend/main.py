@@ -32,6 +32,33 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+
+@app.middleware("http")
+async def cabeceras_de_seguridad(request: Request, call_next):
+    """Cabeceras defensivas en toda respuesta de la API.
+
+    `setdefault` y no asignación directa: si alguna respuesta ya trae la
+    suya (hoy ninguna, pero es la clase de cosa que aparece después), no
+    se la pisa.
+
+    La CSP solo se aplica fuera de DEBUG porque en local `/docs` carga
+    Swagger desde un CDN y `default-src 'none'` lo dejaría en blanco. La
+    API no sirve HTML propio, así que fuera de local puede ser máxima.
+    """
+    respuesta = await call_next(request)
+    respuesta.headers.setdefault("X-Content-Type-Options", "nosniff")
+    respuesta.headers.setdefault("X-Frame-Options", "DENY")
+    respuesta.headers.setdefault("Referrer-Policy", "no-referrer")
+    respuesta.headers.setdefault(
+        "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+    )
+    if not settings.DEBUG:
+        respuesta.headers.setdefault(
+            "Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'"
+        )
+    return respuesta
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,

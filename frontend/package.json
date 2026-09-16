@@ -21,6 +21,11 @@
     "vue": "^3.5.34",
     "vue-router": "^5.0.6"
   },
+  "//overrides": "svgo llega como dependencia transitiva de nuxt (vite-builder > cssnano > postcss-svgo) y las 4.0.x tienen dos fallos de sanitización en removeScripts. Se fija en 4.1.0 hasta que la cadena de arriba lo suba sola; entonces este override se puede sacar.",
+  "overrides": {
+    "svgo": "^4.1.0"
+  },
+
   "devDependencies": {
     "@nuxt/eslint": "^1.17.0",
     "@nuxt/test-utils": "^4.0.3",

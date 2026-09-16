@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+# El CI solo necesita leer el repo: nada de escribir contenido,
+# publicar paquetes ni tocar pull requests.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
