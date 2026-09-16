@@ -35,7 +35,11 @@ async function entrar() {
         </h2>
       </template>
 
-      <form class="space-y-4" @submit.prevent="entrar">
+      <!-- method="post" no es decorativo: si alguien envía el formulario
+           antes de que hidrate el JS, el navegador hace un submit nativo.
+           Sin method eso es un GET, y la contraseña termina en la URL
+           (historial del navegador, logs de acceso). Con post, no. -->
+      <form class="space-y-4" method="post" @submit.prevent="entrar">
         <UFormGroup label="Email" name="email">
           <UInput
             v-model="email"

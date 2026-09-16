@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from app.core import intentos_login
 from app.core.database import Base, get_db
 from app.core.ratelimit import limiter
 from app.core.security import create_access_token, hash_password
@@ -51,6 +52,15 @@ def db(engine):
     session.close()
     transaction.rollback()
     connection.close()
+
+
+@pytest.fixture(autouse=True)
+def _sin_intentos_previos():
+    """El freno del login vive en memoria del proceso, no en la base, así
+    que sin esto los fallos de un test bloquearían al siguiente."""
+    intentos_login.reiniciar()
+    yield
+    intentos_login.reiniciar()
 
 
 @pytest.fixture(scope="function")

@@ -1,3 +1,8 @@
+from datetime import UTC, datetime, timedelta
+
+from app.core import intentos_login
+
+
 def test_login_ok(client, admin):
     r = client.post(
         "/auth/login",
@@ -52,3 +57,75 @@ def test_health(client):
     r = client.get("/health")
     assert r.status_code == 200
     assert r.json() == {"status": "ok"}
+
+
+class TestFrenoDeFuerzaBruta:
+    """El freno cuenta por email y no por IP: detras del proxy de Railway
+    todas las peticiones llegan con la misma IP, asi que un limite por IP
+    seria un balde global que cualquiera podria agotar para dejar a los
+    admins afuera."""
+
+    def _fallar(self, client, veces, email="admin@test.com"):
+        for _ in range(veces):
+            client.post("/auth/login", json={"email": email, "password": "incorrecta"})
+
+    def test_bloquea_tras_demasiados_fallos(self, client, admin):
+        self._fallar(client, intentos_login.MAX_INTENTOS)
+        r = client.post(
+            "/auth/login",
+            json={"email": "admin@test.com", "password": "incorrecta"},
+        )
+        assert r.status_code == 429
+
+    def test_bloquea_aunque_acierte_la_clave(self, client, admin):
+        """Si no, bastaria con seguir probando hasta dar con la correcta."""
+        self._fallar(client, intentos_login.MAX_INTENTOS)
+        r = client.post(
+            "/auth/login",
+            json={"email": "admin@test.com", "password": "clave-test-123"},
+        )
+        assert r.status_code == 429
+
+    def test_un_login_correcto_borra_los_fallos(self, client, admin):
+        self._fallar(client, intentos_login.MAX_INTENTOS - 1)
+        ok = client.post(
+            "/auth/login",
+            json={"email": "admin@test.com", "password": "clave-test-123"},
+        )
+        assert ok.status_code == 200
+        # El contador quedo en cero: vuelve a haber margen completo.
+        self._fallar(client, intentos_login.MAX_INTENTOS - 1)
+        r = client.post(
+            "/auth/login",
+            json={"email": "admin@test.com", "password": "clave-test-123"},
+        )
+        assert r.status_code == 200
+
+    def test_el_bloqueo_no_alcanza_a_otra_cuenta(self, client, admin):
+        """Quien ataca se bloquea a si mismo, no al admin legitimo."""
+        self._fallar(client, intentos_login.MAX_INTENTOS, email="otro@test.com")
+        r = client.post(
+            "/auth/login",
+            json={"email": "admin@test.com", "password": "clave-test-123"},
+        )
+        assert r.status_code == 200
+
+    def test_los_fallos_viejos_no_cuentan(self, client, admin):
+        """Fuera de la ventana el historial caduca solo."""
+        viejo = datetime.now(UTC) - intentos_login.VENTANA - timedelta(seconds=1)
+        intentos_login._fallos["admin@test.com"] = [viejo] * intentos_login.MAX_INTENTOS
+        r = client.post(
+            "/auth/login",
+            json={"email": "admin@test.com", "password": "clave-test-123"},
+        )
+        assert r.status_code == 200
+
+
+def test_las_tres_rutas_de_docs_van_juntas():
+    """El bug era justo este: docs y redoc apagados, pero el esquema
+    seguia publico en /openapi.json, que es de donde salen los dos. O se
+    exponen las tres, o ninguna."""
+    from main import app
+
+    rutas = [app.docs_url, app.redoc_url, app.openapi_url]
+    assert all(r is None for r in rutas) or all(r is not None for r in rutas)
