@@ -1,6 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
 from app.core import intentos_login
+from app.routers import auth as auth_router
 
 
 def test_login_ok(client, admin):
@@ -129,3 +130,28 @@ def test_las_tres_rutas_de_docs_van_juntas():
 
     rutas = [app.docs_url, app.redoc_url, app.openapi_url]
     assert all(r is None for r in rutas) or all(r is not None for r in rutas)
+
+
+def test_el_email_inexistente_cuesta_lo_mismo(client, admin, monkeypatch):
+    """Sin esto, el tiempo de respuesta delata si un email esta registrado:
+    bcrypt solo correria en el caso "la cuenta existe".
+
+    Se comprueba que la verificacion ocurre, no cuanto tarda: un test de
+    tiempos seria inestable en CI.
+    """
+    llamadas = []
+    original = auth_router.verify_password
+
+    def espia(plain, hashed):
+        llamadas.append(hashed)
+        return original(plain, hashed)
+
+    monkeypatch.setattr(auth_router, "verify_password", espia)
+
+    client.post(
+        "/auth/login",
+        json={"email": "nadie@test.com", "password": "loquesea"},
+    )
+
+    assert llamadas, "no se verifico nada para un email inexistente"
+    assert llamadas[0] == auth_router._HASH_DE_DESCARTE
