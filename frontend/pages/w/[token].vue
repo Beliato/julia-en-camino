@@ -256,10 +256,17 @@ async function deshacer(itemId: number) {
 
           <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <UCard v-for="item in deCategoria" :key="item.id">
+              <!-- lazy: la lista puede tener decenas de fotos y la mayoría
+                   queda lejos de la primera pantalla. Quien abre el link en
+                   el celular no tiene por qué bajarlas todas de entrada. La
+                   altura fija (h-40) reserva el lugar, así que la página no
+                   salta cuando llegan. -->
               <img
                 v-if="item.fotos.length > 0"
                 :src="item.fotos[0]!.url"
                 alt=""
+                loading="lazy"
+                decoding="async"
                 class="mb-3 h-40 w-full rounded-lg object-cover"
               >
               <FotoPlaceholder v-else alto="h-40" class="mb-3" />

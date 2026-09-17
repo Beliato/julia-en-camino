@@ -15,11 +15,14 @@ const shareUrl = computed(() =>
 )
 
 onMounted(async () => {
-  await config.fetch()
-  nombre.value = config.nombreApp
-
+  // Los dos pedidos no dependen uno del otro, así que salen juntos.
+  // En fila, el link esperaba a que terminara la config sin necesitarla.
   const api = useApi()
-  const data = await api<{ share_token: string }>('/wishlist/link')
+  const [, data] = await Promise.all([
+    config.fetch(),
+    api<{ share_token: string }>('/wishlist/link'),
+  ])
+  nombre.value = config.nombreApp
   shareToken.value = data.share_token
 })
 
