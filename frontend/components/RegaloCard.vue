@@ -181,7 +181,13 @@ async function borrar() {
         rel="noopener noreferrer"
         class="group relative h-16 w-16 overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-800"
       >
-        <img :src="foto.url" alt="" class="h-full w-full object-cover">
+        <img
+          :src="foto.url"
+          alt=""
+          loading="lazy"
+          decoding="async"
+          class="h-full w-full object-cover"
+        >
         <button
           type="button"
           class="absolute inset-0 hidden items-center justify-center bg-black/50 text-white group-hover:flex"

@@ -360,6 +360,8 @@ function salir() {
               v-if="r.fotos.length > 0"
               :src="r.fotos[0]!.url"
               alt=""
+              loading="lazy"
+              decoding="async"
               class="h-10 w-10 shrink-0 rounded-md object-cover"
             >
             <!-- En un envoltorio y no con la clase suelta: FotoPlaceholder
@@ -538,6 +540,8 @@ function salir() {
             <img
               :src="item.fotos[0]!.url"
               alt=""
+              loading="lazy"
+              decoding="async"
               class="h-40 w-full rounded-lg object-cover sm:h-32"
             >
           </button>
