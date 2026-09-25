@@ -1,3 +1,41 @@
+/* Curva de salida fuerte para todo lo que aparece o desaparece.
+   Las de CSS (`ease`, `ease-out`) arrancan demasiado tibias: esta
+   responde apenas empieza, que es el momento que el usuario está
+   mirando. La usan los estilos propios y, vía `ease-[var(...)]`, la
+   configuración de Nuxt UI en app.config.ts. */
+:root {
+  --ease-out-fuerte: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Los menús de Nuxt UI crecen desde `scale-95`, pero sin origen definido
+   lo hacen desde su propio centro. Tienen que crecer desde el botón que
+   los abre.
+
+   Popper marca el contenedor con la ubicación que terminó usando —
+   `bottom-end` por defecto, `top-end` si abajo no había lugar—, así que
+   el origen sigue a esa ubicación real en vez de quedar fijo. El `div`
+   hijo es el que recibe las clases de la transición. Las reglas exactas
+   van después de las de prefijo para ganarles con la misma
+   especificidad. */
+[data-popper-placement^='bottom'] > div {
+  transform-origin: top center;
+}
+[data-popper-placement^='top'] > div {
+  transform-origin: bottom center;
+}
+[data-popper-placement='bottom-start'] > div {
+  transform-origin: top left;
+}
+[data-popper-placement='bottom-end'] > div {
+  transform-origin: top right;
+}
+[data-popper-placement='top-start'] > div {
+  transform-origin: bottom left;
+}
+[data-popper-placement='top-end'] > div {
+  transform-origin: bottom right;
+}
+
 /* Safari en iOS agranda la página sola al enfocar un control cuya letra
    mide menos de 16px, y después no la devuelve: hay que pellizcar la
    pantalla para volver a encuadrarla. Nuxt UI usa 14px en sus campos,

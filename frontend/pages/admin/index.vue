@@ -503,9 +503,13 @@ function salir() {
               >
                 {{ item.nombre }}
               </span>
+              <!-- Visible por defecto, y oculto hasta el hover solo donde
+                   hay puntero: en el celular no hay hover, así que antes
+                   el lápiz no aparecía nunca y no quedaba ninguna pista de
+                   que el título abre el editor. -->
               <UIcon
                 name="i-heroicons-pencil"
-                class="h-3.5 w-3.5 shrink-0 text-pink-600 opacity-0 transition-opacity group-hover:opacity-100 dark:text-pink-300"
+                class="h-3.5 w-3.5 shrink-0 text-pink-600 transition-opacity group-hover:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:opacity-0 dark:text-pink-300"
               />
             </span>
             <span

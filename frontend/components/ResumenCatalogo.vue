@@ -55,10 +55,32 @@ const porcentaje = computed(() =>
     <div
       class="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800"
     >
+      <!-- Se mueve con translateX dentro del riel, que recorta lo que
+           sobresale, en vez de animar el ancho. El ancho obliga al
+           navegador a recalcular el layout en cada cuadro; el transform va
+           por la GPU. Y a diferencia de scaleX, no le deforma la punta
+           redondeada. -->
       <div
-        class="h-full rounded-full bg-pink-600 transition-all duration-500 dark:bg-pink-400"
-        :style="{ width: `${porcentaje}%` }"
+        class="barra h-full w-full rounded-full bg-pink-600 dark:bg-pink-400"
+        :style="{ transform: `translateX(-${100 - porcentaje}%)` }"
       />
     </div>
   </div>
 </template>
+
+<style scoped>
+/* 300ms con la curva fuerte en vez de los 500ms con la de Tailwind: la
+   barra solo se mueve cuando algo cambia de estado de verdad, y ahí
+   conviene que responda rápido. */
+.barra {
+  transition: transform 300ms var(--ease-out-fuerte);
+}
+
+/* Acá el movimiento es el mensaje entero, no un acompañamiento: sin él
+   simplemente salta al valor nuevo, que es lo correcto. */
+@media (prefers-reduced-motion: reduce) {
+  .barra {
+    transition: none;
+  }
+}
+</style>

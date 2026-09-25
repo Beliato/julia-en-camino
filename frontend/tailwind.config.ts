@@ -7,6 +7,14 @@ import type { Config } from 'tailwindcss'
 // Nuxt UI toma `pink` como primary y `neutral` como gray (ver
 // app.config.ts), así que todo lo ya construido adopta estos valores solo.
 export default <Partial<Config>>{
+  // Sin esto, en Tailwind 3 los `hover:` también se disparan al tocar la
+  // pantalla, y el estilo queda pegado después del tap: el botón de volver
+  // arriba quedaba "levantado" en el celular. Con esto, `hover:` y
+  // `group-hover:` solo aplican en dispositivos que de verdad tienen
+  // puntero con hover.
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
   theme: {
     extend: {
       colors: {
