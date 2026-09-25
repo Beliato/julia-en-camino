@@ -13,6 +13,9 @@ interface DatosEvento {
   aviso: string | null
   imagen_url: string | null
   pide_cantidad: boolean
+  placeholder_nombre: string | null
+  placeholder_cantidad: string | null
+  placeholder_comentario: string | null
 }
 
 // Los datos llegan desde la página, que ya los pidió con el token: así
@@ -21,6 +24,26 @@ const props = defineProps<{ token: string; evento: DatosEvento }>()
 
 const runtime = useRuntimeConfig()
 const toast = useToast()
+
+/** Los ejemplos en gris de cada campo.
+ *
+ * Los de la app son el piso: cada invitación puede cambiarlos porque el
+ * ejemplo bueno depende de a quién se invita — «2 adultos y 1 bebé» no le
+ * sirve a una tanda de amigas. Vacío cuenta como no configurado, así que
+ * borrar el campo en el admin devuelve el de la app.
+ */
+const EJEMPLOS_POR_DEFECTO = {
+  nombre: 'Tu nombre',
+  cantidad: '2 adultos y 1 bebé',
+  comentario: 'Un mensaje que te gustaría compartir con Julia y sus papás',
+}
+
+const ejemplos = computed(() => ({
+  nombre: props.evento.placeholder_nombre || EJEMPLOS_POR_DEFECTO.nombre,
+  cantidad: props.evento.placeholder_cantidad || EJEMPLOS_POR_DEFECTO.cantidad,
+  comentario:
+    props.evento.placeholder_comentario || EJEMPLOS_POR_DEFECTO.comentario,
+}))
 
 const hayDatosDelEvento = computed(() =>
   Boolean(
@@ -201,7 +224,7 @@ function volverAResponder() {
       <UCard v-else>
         <form class="space-y-3" @submit.prevent="enviar">
           <UFormGroup label="¿Cómo te llamás?" required>
-            <UInput v-model="nombre" placeholder="Tu nombre" />
+            <UInput v-model="nombre" :placeholder="ejemplos.nombre" />
           </UFormGroup>
           <UFormGroup label="¿Vas a poder venir?">
             <USelect
@@ -213,13 +236,13 @@ function volverAResponder() {
             />
           </UFormGroup>
           <UFormGroup v-if="evento.pide_cantidad" label="¿Cuántos vienen?">
-            <UInput v-model="cantidad" placeholder="2 adultos y 1 bebé" />
+            <UInput v-model="cantidad" :placeholder="ejemplos.cantidad" />
           </UFormGroup>
           <UFormGroup label="Comentarios para Julia">
             <UTextarea
               v-model="comentario"
               :rows="3"
-              placeholder="Un mensaje que te gustaría compartir con Julia y sus papás"
+              :placeholder="ejemplos.comentario"
             />
           </UFormGroup>
           <UButton

@@ -11,6 +11,9 @@ export interface Invitacion {
   aviso: string | null
   imagen_url: string | null
   pide_cantidad: boolean
+  placeholder_nombre: string | null
+  placeholder_cantidad: string | null
+  placeholder_comentario: string | null
   asisten: number
   no_asisten: number
   created_at: string
@@ -19,7 +22,16 @@ export interface Invitacion {
 export type CamposInvitacion = Partial<
   Pick<
     Invitacion,
-    'titulo' | 'lugar' | 'fecha' | 'hora' | 'texto' | 'aviso' | 'pide_cantidad'
+    | 'titulo'
+    | 'lugar'
+    | 'fecha'
+    | 'hora'
+    | 'texto'
+    | 'aviso'
+    | 'pide_cantidad'
+    | 'placeholder_nombre'
+    | 'placeholder_cantidad'
+    | 'placeholder_comentario'
   >
 >
 
