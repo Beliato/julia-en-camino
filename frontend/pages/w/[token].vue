@@ -32,8 +32,15 @@ const mostrarSubir = computed(
   () => y.value > (heroRef.value?.offsetHeight ?? 400) * 0.8,
 )
 
+const menosMovimiento = usePreferredReducedMotion()
+
 function volverArriba() {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  // Recorrer toda la página de un tirón es justo el movimiento que
+  // incomoda a quien pidió menos: para esa gente se salta directo.
+  window.scrollTo({
+    top: 0,
+    behavior: menosMovimiento.value === 'reduce' ? 'auto' : 'smooth',
+  })
 }
 
 // Los items que aparté ya no vienen en la lista pública, así que se
@@ -316,14 +323,14 @@ async function deshacer(itemId: number) {
       <button
         v-if="mostrarSubir"
         type="button"
-        class="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50/90 py-2 pl-2 pr-4 shadow-lg backdrop-blur transition-transform hover:-translate-y-0.5 dark:border-neutral-800 dark:bg-neutral-900/90"
+        class="boton-subir fixed bottom-6 left-1/2 z-40 flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50/90 py-2 pl-2 pr-4 shadow-lg backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/90"
         aria-label="Volver al inicio de la página"
         @click="volverArriba"
       >
         <img src="/icon.svg" alt="" class="h-9 w-9" aria-hidden="true">
         <UIcon
           name="i-heroicons-arrow-up"
-          class="flecha h-4 w-4 text-pink-700 dark:text-pink-300"
+          class="h-4 w-4 text-pink-700 dark:text-pink-300"
         />
       </button>
     </Transition>
@@ -382,10 +389,31 @@ async function deshacer(itemId: number) {
 </template>
 
 <style scoped>
-/* Entrada y salida del botón */
-.subir-enter-active,
+/* El centrado va acá y no con `-translate-x-1/2` de Tailwind para que
+   todos los transforms del botón se escriban en un solo lugar: si se
+   mezclan, el de la clase y el del hover se pisan entre sí. */
+.boton-subir {
+  transform: translateX(-50%);
+  transition: transform 160ms var(--ease-out-fuerte);
+}
+
+/* Solo donde hay puntero de verdad. En el celular el tap deja el hover
+   pegado, y el botón quedaba levantado después de tocarlo. */
+@media (hover: hover) and (pointer: fine) {
+  .boton-subir:hover {
+    transform: translate(-50%, -2px);
+  }
+}
+
+/* Aparece y desaparece. La salida es más corta que la entrada: mostrarlo
+   es lo que el usuario mira, esconderlo es la página respondiendo. */
+.subir-enter-active {
+  transition: opacity 200ms var(--ease-out-fuerte),
+    transform 200ms var(--ease-out-fuerte);
+}
 .subir-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition: opacity 150ms var(--ease-out-fuerte),
+    transform 150ms var(--ease-out-fuerte);
 }
 .subir-enter-from,
 .subir-leave-to {
@@ -393,21 +421,16 @@ async function deshacer(itemId: number) {
   transform: translate(-50%, 0.75rem);
 }
 
-/* La flecha late apenas, para invitar al click sin distraer */
-@keyframes flotar {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
-}
-.flecha {
-  animation: flotar 2s ease-in-out infinite;
-}
-
+/* Movimiento reducido es más suave, no ausente: se conserva el
+   desvanecido —que es lo que explica que algo aparece o se va— y se
+   quita el desplazamiento. */
 @media (prefers-reduced-motion: reduce) {
-  .subir-enter-active,
-  .subir-leave-active,
-  .flecha {
+  .subir-enter-from,
+  .subir-leave-to {
+    transform: translateX(-50%);
+  }
+  .boton-subir {
     transition: none;
-    animation: none;
   }
 }
 </style>
