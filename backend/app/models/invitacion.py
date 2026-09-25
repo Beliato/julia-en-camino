@@ -38,6 +38,16 @@ class Invitacion(Base):
     # a familias; en una tanda de amigas es un campo de más.
     pide_cantidad: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    # Los ejemplos que se ven en gris dentro de cada campo del formulario.
+    # Nulos usan los de la app: el ejemplo bueno depende de a quién se
+    # invita ("2 adultos y 1 bebé" no le sirve a una tanda de amigas), y
+    # es lo que más orienta sobre qué se espera que escriban.
+    placeholder_nombre: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    placeholder_cantidad: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    placeholder_comentario: Mapped[str | None] = mapped_column(
+        String(150), nullable=True
+    )
+
     # Lámina propia. Si está vacía se usa la que viene con la app: sirve
     # para el caso más común, varias tandas del mismo baby shower.
     imagen_url: Mapped[str | None] = mapped_column(String(500), nullable=True)

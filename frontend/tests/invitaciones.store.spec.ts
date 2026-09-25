@@ -24,6 +24,9 @@ function invitacion(over: Partial<Invitacion> = {}): Invitacion {
     aviso: null,
     imagen_url: null,
     pide_cantidad: false,
+    placeholder_nombre: null,
+    placeholder_cantidad: null,
+    placeholder_comentario: null,
     asisten: 0,
     no_asisten: 0,
     created_at: '2026-09-01T12:00:00Z',
@@ -125,5 +128,24 @@ describe('store invitaciones', () => {
       method: 'DELETE',
     })
     expect(store.invitaciones[0]!.imagen_url).toBeNull()
+  })
+
+  it('editar manda los placeholders del formulario', () => {
+    // Van por invitación: el ejemplo bueno depende de a quién se invita.
+    const store = useInvitacionesStore()
+    store.invitaciones = [invitacion({ id: 1 })]
+    apiMock.mockResolvedValue(
+      invitacion({ id: 1, placeholder_cantidad: '4 personas' }),
+    )
+
+    return store
+      .editar(1, { placeholder_cantidad: '4 personas' })
+      .then(() => {
+        expect(apiMock).toHaveBeenCalledWith('/invitaciones/1', {
+          method: 'PATCH',
+          body: { placeholder_cantidad: '4 personas' },
+        })
+        expect(store.invitaciones[0]!.placeholder_cantidad).toBe('4 personas')
+      })
   })
 })

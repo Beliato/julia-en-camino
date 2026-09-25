@@ -366,3 +366,77 @@ class TestCuantosVienen:
             json={"cantidad": "3, se suma mi hermana"},
         )
         assert r.json()["cantidad"] == "3, se suma mi hermana"
+
+
+class TestPlaceholdersConfigurables:
+    """Los ejemplos en gris de cada campo del formulario.
+
+    Van por invitacion y no globales porque el ejemplo bueno depende de a
+    quien se invita: "2 adultos y 1 bebe" orienta a una familia y confunde
+    a una tanda de amigas.
+    """
+
+    def test_nacen_vacios(self, client, db):
+        """Nulo significa "usa el de la app", asi ninguna invitacion vieja
+        cambia de aspecto al aplicar la migracion."""
+        r = client.get(f"/i/{_token(db)}")
+        assert r.status_code == 200
+        cuerpo = r.json()
+        assert cuerpo["placeholder_nombre"] is None
+        assert cuerpo["placeholder_cantidad"] is None
+        assert cuerpo["placeholder_comentario"] is None
+
+    def test_viajan_al_invitado(self, client, auth_headers, db):
+        inv = _invitacion(db, "Con ejemplos")
+        client.patch(
+            f"/invitaciones/{inv.id}",
+            json={
+                "placeholder_nombre": "Tu nombre y apellido",
+                "placeholder_cantidad": "4 personas",
+                "placeholder_comentario": "Dejale unas palabras",
+            },
+            headers=auth_headers,
+        )
+        cuerpo = client.get(f"/i/{inv.token}").json()
+        assert cuerpo["placeholder_nombre"] == "Tu nombre y apellido"
+        assert cuerpo["placeholder_cantidad"] == "4 personas"
+        assert cuerpo["placeholder_comentario"] == "Dejale unas palabras"
+
+    def test_vaciarlos_vuelve_al_de_la_app(self, client, auth_headers, db):
+        """Borrar el campo en el admin tiene que devolver el ejemplo de la
+        app, no dejar el formulario sin ninguno."""
+        inv = _invitacion(db, "Para vaciar")
+        client.patch(
+            f"/invitaciones/{inv.id}",
+            json={"placeholder_nombre": "Algo"},
+            headers=auth_headers,
+        )
+        client.patch(
+            f"/invitaciones/{inv.id}",
+            json={"placeholder_nombre": "   "},
+            headers=auth_headers,
+        )
+        assert client.get(f"/i/{inv.token}").json()["placeholder_nombre"] is None
+
+    def test_cada_invitacion_tiene_los_suyos(self, client, auth_headers, db):
+        familia = _invitacion(db, "Familia")
+        amigas = _invitacion(db, "Amigas")
+        client.patch(
+            f"/invitaciones/{familia.id}",
+            json={"placeholder_cantidad": "2 adultos y 1 bebe"},
+            headers=auth_headers,
+        )
+        assert (
+            client.get(f"/i/{familia.token}").json()["placeholder_cantidad"]
+            == "2 adultos y 1 bebe"
+        )
+        assert client.get(f"/i/{amigas.token}").json()["placeholder_cantidad"] is None
+
+    def test_se_pueden_fijar_al_crear(self, client, auth_headers):
+        r = client.post(
+            "/invitaciones",
+            json={"titulo": "Nueva", "placeholder_nombre": "Tu nombre completo"},
+            headers=auth_headers,
+        )
+        assert r.status_code == 201
+        assert r.json()["placeholder_nombre"] == "Tu nombre completo"

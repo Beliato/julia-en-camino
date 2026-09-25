@@ -16,6 +16,9 @@ const f = reactive({
   texto: props.invitacion.texto ?? '',
   aviso: props.invitacion.aviso ?? '',
   pideCantidad: props.invitacion.pide_cantidad,
+  placeholderNombre: props.invitacion.placeholder_nombre ?? '',
+  placeholderCantidad: props.invitacion.placeholder_cantidad ?? '',
+  placeholderComentario: props.invitacion.placeholder_comentario ?? '',
 })
 const guardando = ref(false)
 const subiendo = ref(false)
@@ -35,6 +38,9 @@ async function guardar() {
       texto: f.texto.trim(),
       aviso: f.aviso.trim(),
       pide_cantidad: f.pideCantidad,
+      placeholder_nombre: f.placeholderNombre.trim(),
+      placeholder_cantidad: f.placeholderCantidad.trim(),
+      placeholder_comentario: f.placeholderComentario.trim(),
     })
     toast.add({ title: 'Invitación actualizada', color: 'green' })
     emit('close')
@@ -125,8 +131,42 @@ async function quitarImagen() {
         <UCheckbox
           v-model="f.pideCantidad"
           label="Preguntar cuántos vienen"
-          help="Para cuando se invita a familias. Es un campo de texto: «2 adultos y 1 bebé»."
+          help="Para cuando se invita a familias. Es un campo de texto."
         />
+
+        <!-- Los ejemplos en gris de cada campo. Son configurables porque
+             el ejemplo bueno depende de a quién se invita: «2 adultos y 1
+             bebé» orienta a una familia y confunde a una tanda de amigas.
+             Los placeholder de estos campos muestran el texto que se usa
+             si se dejan vacíos. -->
+        <div class="space-y-3 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
+          <p class="text-sm font-medium">
+            Ejemplos dentro de cada campo
+          </p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            El texto gris que ve el invitado antes de escribir. Si los dejás
+            vacíos se usan los de abajo.
+          </p>
+
+          <UFormGroup label="En «¿Cómo te llamás?»">
+            <UInput v-model="f.placeholderNombre" placeholder="Tu nombre" />
+          </UFormGroup>
+
+          <UFormGroup v-if="f.pideCantidad" label="En «¿Cuántos vienen?»">
+            <UInput
+              v-model="f.placeholderCantidad"
+              placeholder="2 adultos y 1 bebé"
+            />
+          </UFormGroup>
+
+          <UFormGroup label="En «Comentarios para Julia»">
+            <UTextarea
+              v-model="f.placeholderComentario"
+              :rows="2"
+              placeholder="Un mensaje que te gustaría compartir con Julia y sus papás"
+            />
+          </UFormGroup>
+        </div>
 
         <UFormGroup
           label="Lámina"

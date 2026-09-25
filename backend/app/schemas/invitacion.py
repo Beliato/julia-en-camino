@@ -10,6 +10,9 @@ class InvitacionBase(BaseModel):
     hora: str | None = Field(default=None, max_length=100)
     texto: str | None = Field(default=None, max_length=500)
     aviso: str | None = Field(default=None, max_length=500)
+    placeholder_nombre: str | None = Field(default=None, max_length=150)
+    placeholder_cantidad: str | None = Field(default=None, max_length=150)
+    placeholder_comentario: str | None = Field(default=None, max_length=150)
 
     @field_validator("titulo")
     @classmethod
@@ -33,6 +36,9 @@ class InvitacionUpdate(BaseModel):
     hora: str | None = Field(default=None, max_length=100)
     texto: str | None = Field(default=None, max_length=500)
     aviso: str | None = Field(default=None, max_length=500)
+    placeholder_nombre: str | None = Field(default=None, max_length=150)
+    placeholder_cantidad: str | None = Field(default=None, max_length=150)
+    placeholder_comentario: str | None = Field(default=None, max_length=150)
     pide_cantidad: bool | None = None
 
 
@@ -49,6 +55,9 @@ class InvitacionAdminOut(BaseModel):
     aviso: str | None = None
     imagen_url: str | None = None
     pide_cantidad: bool = False
+    placeholder_nombre: str | None = None
+    placeholder_cantidad: str | None = None
+    placeholder_comentario: str | None = None
     asisten: int = 0
     no_asisten: int = 0
     created_at: datetime
@@ -68,3 +77,7 @@ class InvitacionPublicaOut(BaseModel):
     aviso: str | None = None
     imagen_url: str | None = None
     pide_cantidad: bool = False
+    # Nulos: quien recibe el link ve los ejemplos que trae la app.
+    placeholder_nombre: str | None = None
+    placeholder_cantidad: str | None = None
+    placeholder_comentario: str | None = None

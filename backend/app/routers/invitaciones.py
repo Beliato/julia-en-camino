@@ -207,4 +207,7 @@ def ver_invitacion(request: Request, token: str, db: Session = Depends(get_db)):
         aviso=inv.aviso,
         imagen_url=inv.imagen_url,
         pide_cantidad=inv.pide_cantidad,
+        placeholder_nombre=inv.placeholder_nombre,
+        placeholder_cantidad=inv.placeholder_cantidad,
+        placeholder_comentario=inv.placeholder_comentario,
     )
