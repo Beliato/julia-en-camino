@@ -54,7 +54,7 @@ useHead(() => ({ title: datos.value?.nombre_app ?? 'Julia en Camino' }))
 // recién al cargar la página. Para que fuera el de cada una habría que
 // pedirlos en el servidor.
 usePreviewDelLink({
-  descripcion: 'Estás invitada a celebrar la llegada de Julia.',
+  descripcion: 'Estás invitado a celebrar la llegada de Julia.',
 })
 </script>
 
