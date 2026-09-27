@@ -221,6 +221,24 @@ function volverAResponder() {
         >
           Cambiar mi respuesta
         </UButton>
+
+        <!-- Invitación a ver la lista de regalos.
+             Vivía al pie de la página y ahí pasaba desapercibida: quien
+             ya confirmó dejó de leer. Acá aparece en el momento en que la
+             persona todavía está mirando, justo después de responder.
+             Se muestra también a quien avisó que no puede venir: no poder
+             ir no quita las ganas de mandar algo. -->
+        <div
+          v-if="evento.texto_regalos && evento.wishlist_token"
+          class="mt-4 border-t border-neutral-200 pt-4 dark:border-neutral-800"
+        >
+          <p class="text-sm text-neutral-600 dark:text-neutral-400">
+            {{ evento.texto_regalos }}
+          </p>
+          <UButton :to="`/w/${evento.wishlist_token}`" block class="mt-3">
+            Ver la lista de ideas
+          </UButton>
+        </div>
       </UCard>
 
       <UCard v-else>
@@ -267,26 +285,6 @@ function volverAResponder() {
         </form>
       </UCard>
 
-      <!-- Invitación a mirar la lista de regalos.
-           Va al pie y después de confirmar, no antes: lo que se pide es
-           que vengan, y los regalos son lo secundario.
-           Aparece solo si esta invitación decidió mencionarla; sin texto
-           no hay bloque, y el backend tampoco manda el token. -->
-      <section
-        v-if="evento.texto_regalos && evento.wishlist_token"
-        class="mt-6 text-center"
-      >
-        <p class="text-sm text-neutral-600 dark:text-neutral-400">
-          {{ evento.texto_regalos }}
-        </p>
-        <UButton
-          :to="`/w/${evento.wishlist_token}`"
-          variant="outline"
-          class="mt-3"
-        >
-          Ver la lista de ideas
-        </UButton>
-      </section>
     </div>
   </section>
 </template>
