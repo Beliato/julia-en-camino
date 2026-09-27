@@ -9,6 +9,7 @@ export interface Invitacion {
   hora: string | null
   texto: string | null
   aviso: string | null
+  texto_regalos: string | null
   imagen_url: string | null
   pide_cantidad: boolean
   placeholder_nombre: string | null
@@ -28,6 +29,7 @@ export type CamposInvitacion = Partial<
     | 'hora'
     | 'texto'
     | 'aviso'
+    | 'texto_regalos'
     | 'pide_cantidad'
     | 'placeholder_nombre'
     | 'placeholder_cantidad'

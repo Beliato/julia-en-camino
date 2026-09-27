@@ -207,7 +207,10 @@ def ver_invitacion(request: Request, token: str, db: Session = Depends(get_db)):
         aviso=inv.aviso,
         imagen_url=inv.imagen_url,
         pide_cantidad=inv.pide_cantidad,
+        texto_regalos=inv.texto_regalos,
         placeholder_nombre=inv.placeholder_nombre,
         placeholder_cantidad=inv.placeholder_cantidad,
         placeholder_comentario=inv.placeholder_comentario,
+        # El token solo sale si esta invitación menciona la lista.
+        wishlist_token=(config.share_token if inv.texto_regalos and config else None),
     )

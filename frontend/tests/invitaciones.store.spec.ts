@@ -22,6 +22,7 @@ function invitacion(over: Partial<Invitacion> = {}): Invitacion {
     hora: null,
     texto: null,
     aviso: null,
+    texto_regalos: null,
     imagen_url: null,
     pide_cantidad: false,
     placeholder_nombre: null,
