@@ -92,6 +92,23 @@ onMounted(() => {
 
 useHead(() => ({ title: nombreApp.value }))
 
+// Lo que se lee al compartir este link. Es fijo a propósito: ver
+// usePreviewDelLink.
+//
+// El título dice qué es el link; la descripción, con qué ánimo. Van
+// separados porque el título es lo primero que se lee y nunca se corta.
+//
+// La descripción va en una sola línea: el salto de párrafo no sobrevive
+// dentro de un atributo meta, los lectores lo colapsan a un espacio.
+usePreviewDelLink({
+  titulo: 'Ideas de regalos para Julia',
+  // Entra entera en el recuadro: WhatsApp le da dos líneas y corta. Si
+  // se alarga, lo primero que se pierde es el cierre.
+  descripcion:
+    'Si deseas darle un detallito, cualquier cariño será recibido con mucho ' +
+    'amor. Acá te compartimos algunas ideas',
+})
+
 async function reservar() {
   if (!itemReservando.value || !nombreInvitado.value.trim()) return
   enviando.value = true

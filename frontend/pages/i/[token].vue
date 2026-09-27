@@ -45,6 +45,17 @@ onMounted(async () => {
 })
 
 useHead(() => ({ title: datos.value?.nombre_app ?? 'Julia en Camino' }))
+
+// La invitación se comparte con gente que viene al evento, no a ver la
+// lista de regalos: su preview no puede hablar de lo que hace falta.
+//
+// El texto es fijo y no el de cada invitación, porque el robot que arma
+// el recuadro no ejecuta JavaScript y los datos del evento se piden
+// recién al cargar la página. Para que fuera el de cada una habría que
+// pedirlos en el servidor.
+usePreviewDelLink({
+  descripcion: 'Estás invitada a celebrar la llegada de Julia.',
+})
 </script>
 
 <template>
