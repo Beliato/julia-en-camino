@@ -11,11 +11,13 @@ interface DatosEvento {
   hora: string | null
   texto: string | null
   aviso: string | null
+  texto_regalos: string | null
   imagen_url: string | null
   pide_cantidad: boolean
   placeholder_nombre: string | null
   placeholder_cantidad: string | null
   placeholder_comentario: string | null
+  wishlist_token: string | null
 }
 
 // Los datos llegan desde la página, que ya los pidió con el token: así
@@ -264,6 +266,27 @@ function volverAResponder() {
           </UButton>
         </form>
       </UCard>
+
+      <!-- Invitación a mirar la lista de regalos.
+           Va al pie y después de confirmar, no antes: lo que se pide es
+           que vengan, y los regalos son lo secundario.
+           Aparece solo si esta invitación decidió mencionarla; sin texto
+           no hay bloque, y el backend tampoco manda el token. -->
+      <section
+        v-if="evento.texto_regalos && evento.wishlist_token"
+        class="mt-6 text-center"
+      >
+        <p class="text-sm text-neutral-600 dark:text-neutral-400">
+          {{ evento.texto_regalos }}
+        </p>
+        <UButton
+          :to="`/w/${evento.wishlist_token}`"
+          variant="outline"
+          class="mt-3"
+        >
+          Ver la lista de ideas
+        </UButton>
+      </section>
     </div>
   </section>
 </template>

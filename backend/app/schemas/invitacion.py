@@ -10,6 +10,7 @@ class InvitacionBase(BaseModel):
     hora: str | None = Field(default=None, max_length=100)
     texto: str | None = Field(default=None, max_length=500)
     aviso: str | None = Field(default=None, max_length=500)
+    texto_regalos: str | None = Field(default=None, max_length=500)
     placeholder_nombre: str | None = Field(default=None, max_length=150)
     placeholder_cantidad: str | None = Field(default=None, max_length=150)
     placeholder_comentario: str | None = Field(default=None, max_length=150)
@@ -36,6 +37,7 @@ class InvitacionUpdate(BaseModel):
     hora: str | None = Field(default=None, max_length=100)
     texto: str | None = Field(default=None, max_length=500)
     aviso: str | None = Field(default=None, max_length=500)
+    texto_regalos: str | None = Field(default=None, max_length=500)
     placeholder_nombre: str | None = Field(default=None, max_length=150)
     placeholder_cantidad: str | None = Field(default=None, max_length=150)
     placeholder_comentario: str | None = Field(default=None, max_length=150)
@@ -53,6 +55,7 @@ class InvitacionAdminOut(BaseModel):
     hora: str | None = None
     texto: str | None = None
     aviso: str | None = None
+    texto_regalos: str | None = None
     imagen_url: str | None = None
     pide_cantidad: bool = False
     placeholder_nombre: str | None = None
@@ -75,9 +78,15 @@ class InvitacionPublicaOut(BaseModel):
     hora: str | None = None
     texto: str | None = None
     aviso: str | None = None
+    texto_regalos: str | None = None
     imagen_url: str | None = None
     pide_cantidad: bool = False
     # Nulos: quien recibe el link ve los ejemplos que trae la app.
     placeholder_nombre: str | None = None
     placeholder_cantidad: str | None = None
     placeholder_comentario: str | None = None
+    # Con qué token armar el link a la lista de regalos. Solo viaja si la
+    # invitación decidió mencionarla (`texto_regalos`): el link de la
+    # lista se comparte aparte, y una invitación que no la nombra tampoco
+    # tiene por qué delatar que existe.
+    wishlist_token: str | None = None

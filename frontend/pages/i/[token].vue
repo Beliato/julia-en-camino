@@ -21,11 +21,13 @@ interface InvitacionApi {
   hora: string | null
   texto: string | null
   aviso: string | null
+  texto_regalos: string | null
   imagen_url: string | null
   pide_cantidad: boolean
   placeholder_nombre: string | null
   placeholder_cantidad: string | null
   placeholder_comentario: string | null
+  wishlist_token: string | null
 }
 
 const datos = ref<InvitacionApi | null>(null)

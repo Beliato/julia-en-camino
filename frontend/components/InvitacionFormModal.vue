@@ -15,6 +15,7 @@ const f = reactive({
   hora: props.invitacion.hora ?? '',
   texto: props.invitacion.texto ?? '',
   aviso: props.invitacion.aviso ?? '',
+  textoRegalos: props.invitacion.texto_regalos ?? '',
   pideCantidad: props.invitacion.pide_cantidad,
   placeholderNombre: props.invitacion.placeholder_nombre ?? '',
   placeholderCantidad: props.invitacion.placeholder_cantidad ?? '',
@@ -37,6 +38,7 @@ async function guardar() {
       hora: f.hora.trim(),
       texto: f.texto.trim(),
       aviso: f.aviso.trim(),
+      texto_regalos: f.textoRegalos.trim(),
       pide_cantidad: f.pideCantidad,
       placeholder_nombre: f.placeholderNombre.trim(),
       placeholder_cantidad: f.placeholderCantidad.trim(),
@@ -125,6 +127,17 @@ async function quitarImagen() {
             v-model="f.aviso"
             :rows="2"
             placeholder="Confirmá tu asistencia antes del 7 de noviembre, en el siguiente formulario o con los papás de Julia por WhatsApp"
+          />
+        </UFormGroup>
+
+        <UFormGroup
+          label="Invitar a ver la lista de regalos"
+          help="Va al pie, debajo del formulario, con un botón que lleva a la lista. Si lo dejás vacío, esta invitación no la menciona ni revela su link."
+        >
+          <UTextarea
+            v-model="f.textoRegalos"
+            :rows="3"
+            placeholder="Si deseas darle un detallito, cualquier cariño será recibido con mucho amor. Acá te compartimos algunas ideas:"
           />
         </UFormGroup>
 

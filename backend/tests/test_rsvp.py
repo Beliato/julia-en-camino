@@ -440,3 +440,68 @@ class TestPlaceholdersConfigurables:
         )
         assert r.status_code == 201
         assert r.json()["placeholder_nombre"] == "Tu nombre completo"
+
+
+class TestInvitarALaLista:
+    """El bloque al pie que lleva de la invitacion a la lista de regalos.
+
+    El texto es tambien el interruptor: la lista se comparte por un link
+    aparte, y una invitacion que no la menciona tampoco tiene por que
+    delatar que existe.
+    """
+
+    def test_apagado_por_defecto(self, client, db):
+        _config(db)
+        cuerpo = client.get(f"/i/{_token(db)}").json()
+        assert cuerpo["texto_regalos"] is None
+        assert cuerpo["wishlist_token"] is None
+
+    def test_sin_texto_no_viaja_el_token(self, client, auth_headers, db):
+        """Lo importante: que el token no se filtre solo por existir."""
+        _config(db)
+        inv = _invitacion(db, "Sin mencion")
+        cuerpo = client.get(f"/i/{inv.token}").json()
+        assert cuerpo["wishlist_token"] is None
+
+    def test_con_texto_viaja_el_token(self, client, auth_headers, db):
+        config = _config(db)
+        inv = _invitacion(db, "Con mencion")
+        client.patch(
+            f"/invitaciones/{inv.id}",
+            json={"texto_regalos": "Aca te compartimos algunas ideas:"},
+            headers=auth_headers,
+        )
+        cuerpo = client.get(f"/i/{inv.token}").json()
+        assert cuerpo["texto_regalos"] == "Aca te compartimos algunas ideas:"
+        assert cuerpo["wishlist_token"] == config.share_token
+
+    def test_vaciarlo_vuelve_a_ocultar_el_token(self, client, auth_headers, db):
+        """Apagar el bloque tiene que cortar tambien el acceso, no solo
+        esconder el parrafo."""
+        _config(db)
+        inv = _invitacion(db, "Para apagar")
+        client.patch(
+            f"/invitaciones/{inv.id}",
+            json={"texto_regalos": "Aca van ideas:"},
+            headers=auth_headers,
+        )
+        client.patch(
+            f"/invitaciones/{inv.id}",
+            json={"texto_regalos": "   "},
+            headers=auth_headers,
+        )
+        cuerpo = client.get(f"/i/{inv.token}").json()
+        assert cuerpo["texto_regalos"] is None
+        assert cuerpo["wishlist_token"] is None
+
+    def test_cada_invitacion_decide_por_su_cuenta(self, client, auth_headers, db):
+        _config(db)
+        con = _invitacion(db, "La que menciona")
+        sin = _invitacion(db, "La que no")
+        client.patch(
+            f"/invitaciones/{con.id}",
+            json={"texto_regalos": "Aca van ideas:"},
+            headers=auth_headers,
+        )
+        assert client.get(f"/i/{con.token}").json()["wishlist_token"] is not None
+        assert client.get(f"/i/{sin.token}").json()["wishlist_token"] is None

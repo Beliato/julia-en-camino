@@ -38,6 +38,15 @@ class Invitacion(Base):
     # a familias; en una tanda de amigas es un campo de más.
     pide_cantidad: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    # Invitación a mirar la lista de regalos, al pie de la página. Nulo
+    # significa que esta invitación no la menciona: el link de la lista se
+    # comparte aparte, y hay tandas donde hablar de regalos no va.
+    #
+    # Es también el interruptor de ese bloque, y por lo tanto de si el
+    # token de la lista sale en la respuesta pública: sin texto, la
+    # invitación no revela que la lista existe.
+    texto_regalos: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
     # Los ejemplos que se ven en gris dentro de cada campo del formulario.
     # Nulos usan los de la app: el ejemplo bueno depende de a quién se
     # invita ("2 adultos y 1 bebé" no le sirve a una tanda de amigas), y
